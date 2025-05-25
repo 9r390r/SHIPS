@@ -32,25 +32,21 @@ enum TileStatus {
 }
 
 Color getCoordinateContrastingColor(TileStatus status) {
-  Color coordinateOutputColor;
-  if (status == TileStatus.fogofwar) {
-    coordinateOutputColor = Colors.white;
-  } else if (status == TileStatus.ship) {
-    coordinateOutputColor = Colors.white;
-  } else if (status == TileStatus.allowed) {
-    coordinateOutputColor = Colors.white;
-  } else if (status == TileStatus.blocked) {
-    coordinateOutputColor = Colors.black;
-  } else if (status == TileStatus.sand) {
-    coordinateOutputColor = Colors.black;
-  } else if (status == TileStatus.water) {
-    coordinateOutputColor = Colors.black;
-  } else if (status == TileStatus.destroyed) {
-    coordinateOutputColor = Colors.white;
-  } else {
-    coordinateOutputColor = Colors.blueGrey;
+  switch (status) {
+    case TileStatus.fogofwar:
+    case TileStatus.ship:
+    case TileStatus.allowed:
+    case TileStatus.destroyed:
+      return Colors.white;
+
+    case TileStatus.blocked:
+    case TileStatus.sand:
+    case TileStatus.water:
+      return Colors.black;
+
+    default:
+      return Colors.blueGrey;
   }
-  return coordinateOutputColor;
 }
 
 Color getTileColor(TileStatus status) {
@@ -242,7 +238,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
   String alfaAdressEncoderByIndex(int index) {
     int x = index % mapside;
     int y = index ~/ mapside;
-    return boardLetters[x]! + y.toString();
+    return boardLetters[x]! + (y + 1).toString();
   }
 
   MapTile? getMapTileByYX(int y, int x) {
@@ -260,16 +256,14 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
     int x = tile.x;
     int y = tile.y;
 
-    List<List<int>> neighbourAdresses = [
-      [y, x + 1],
-      [y, x - 1],
-      [y + 1, x],
-      [y - 1, x],
+    List<(int, int)> neighbourAdresses = [
+      (y, x + 1),
+      (y, x - 1),
+      (y + 1, x),
+      (y - 1, x),
     ];
 
-    for (List<int> yxPair in neighbourAdresses) {
-      int neighbourY = yxPair[0];
-      int neighbourX = yxPair[1];
+    for (final (neighbourY, neighbourX) in neighbourAdresses) {
       MapTile? checkedTile = getMapTileByYX(neighbourY, neighbourX);
 
       if (widget.currentPlayer.ships[n].locations.contains(checkedTile)) {
@@ -330,8 +324,10 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
       // ended deploying this ship
     }
 
-    if ((widget.currentPlayer.ships[n].tiles != 1) &&
-        (thisShipPlacedTiles == widget.currentPlayer.ships[n].tiles)) {
+    final isCompletelyDeployed =
+        (widget.currentPlayer.ships[n].tiles != 1) &&
+        (thisShipPlacedTiles == widget.currentPlayer.ships[n].tiles);
+    if (isCompletelyDeployed) {
       // it means that the ship has been completely deployed
       // here proceeding with changing the tails marked as availabe to blocked
 
@@ -682,6 +678,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
           }
 
           if (deployError) {
+            // just in case XD
             break;
           }
         }

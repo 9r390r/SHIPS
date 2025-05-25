@@ -78,7 +78,7 @@ List<MapTile> initializeNewMapTilesAndAddresses() {
 String alfaAdressEncoderByIndex(int index) {
   int x = index % mapside;
   int y = index ~/ mapside;
-  return boardLetters[x]! + y.toString();
+  return boardLetters[x]! + (y + 1).toString();
 }
 
 final Map<int, String> boardLetters = {
