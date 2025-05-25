@@ -4,8 +4,8 @@
 // import 'package:collection/collection.dart';
 
 // import 'package:flutter/material.dart';
-// import 'package:vent/custom_game_settings.dart';
-// import 'package:vent/game_page.dart';
+// import 'package:ships/custom_game_settings.dart';
+// import 'package:ships/game_page.dart';
 // import 'custom_player_introduction.dart';
 // import 'main.dart';
 

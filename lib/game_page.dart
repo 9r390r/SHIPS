@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'dart:math' as math;
 // import 'package:collection/collection.dart';
-import 'package:vent/custom_game_settings.dart';
-// import 'package:vent/custom_game_setup.dart';
+import 'package:ships/custom_game_settings.dart';
+// import 'package:ships/custom_game_setup.dart';
 
 import 'custom_player_introduction.dart';
 import 'player_deploy_page.dart';
