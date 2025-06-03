@@ -380,6 +380,7 @@ Player setUpComputerEnemy() {
   print("Computer Fraction: ${computerPlayer.fraction}");
   print("==========================================================");
   myCustomGameSettings.players.add(computerPlayer);
+
   return computerPlayer;
 }
 
@@ -519,18 +520,23 @@ GameSetup savedGameSettingsWithPlayers() {
 class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
   bool fractioniIsChosen = false;
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
   void test() {
     print('Current gameMode: ${myCustomGameSettings.gameMode}');
   }
 
-  List<IconData> getGameModeSymbol(int gameMode) {
+  List<IconData> getGameModeSymbol(GameMode gameMode) {
     List<IconData> gameModeSymbolList = [];
 
     setState(() {
-      if (gameMode == 1) {
+      if (gameMode == GameMode.pvp) {
         gameModeSymbolList.add((Icons.person));
         gameModeSymbolList.add((Icons.person));
-      } else if (gameMode == 2) {
+      } else if (gameMode == GameMode.computer) {
         gameModeSymbolList.add((Icons.person));
         gameModeSymbolList.add((Icons.smart_toy_outlined));
       }
@@ -565,7 +571,7 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
             "Navy deploys fewer but very powerful ships\nthat are more difficult to sink.\n(Heavy and powerful but easy to target)";
       } else if (fraction == 'Pirates') {
         description =
-            "Pirates, me lad, we don't play fair.\nWe be overwhelmin' with lots of smaller brigs, arr.\n(Scattered and stealthy but fragile)";
+            "Pirates, me lad, we don't play fair.\nWe be strikin' from shadows, arr.\n(Scattered and stealthy but fragile)";
       } else if (fraction == 'Federation') {
         description =
             "Balanced and versatile.\nThe Federation adapts to any mission.\n(Standard, balanced lineup)";
@@ -584,7 +590,7 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
 
     mapside = 4;
     myCustomGameSettings.computerDifficulty = 0;
-    myCustomGameSettings.gameMode = 0;
+    myCustomGameSettings.gameMode = GameMode.notSet;
     myCustomGameSettings.mapsize = 4.0;
 
     for (Player player in myCustomGameSettings.players) {
@@ -771,7 +777,7 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
                   onTap: () {
                     setAvatarColor(
                       widget.currentPlayer,
-                      playerAvatarColorList[index]!,
+                      playerAvatarColorList[index],
                     );
                     setState(() {
                       isAvatarBackground = true;
@@ -862,9 +868,10 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
               ),
               onPressed: () {
                 if (canContinue) {
-                  if (widget.settings.gameMode == 2) {
-                    setUpComputerEnemy();
-                  }
+                  // if (widget.settings.gameMode == 2) {
+                  //   setUpComputerEnemy();
+                  // }
+                  // this logic is to be handled in the player deploy page, computer is to be deployed second
                   Navigator.push(
                     context,
                     MaterialPageRoute(

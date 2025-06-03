@@ -27,7 +27,7 @@ late Player player1;
 late Player player2;
 
 bool _showPlayerCard = true;
-String comunicate = '';
+String message = '';
 
 void exitGame() {
   mapTiles.clear();
@@ -37,7 +37,7 @@ void exitGame() {
 
   mapside = 4;
   myCustomGameSettings.computerDifficulty = 0;
-  myCustomGameSettings.gameMode = 0;
+  myCustomGameSettings.gameMode = GameMode.notSet;
   myCustomGameSettings.mapsize = 4.0;
   idbase = 1;
 
@@ -127,7 +127,7 @@ Ship? identifyEnemyShipByTile(PlayerState enemyPlayer, MapTile checkTile) {
 void checkIsWinner(GameManager gameManager) {
   if (gameManager.enemyPlayer.player.currentHealth == 0) {
     isWinner = true;
-    comunicate =
+    message =
         "${gameManager.currentPlayer.player.name}'s all ships have been destroyed! ${gameManager.currentPlayer.player.name} wins!";
   }
 }
@@ -152,7 +152,7 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
               gameManager.enemyPlayer.player.currentHealth--;
               targetTile.isExplored = true;
               hit = true;
-              comunicate = 'Hit enemy ship at ${targetTile.alfaAdress} !';
+              message = 'Hit enemy ship at ${targetTile.alfaAdress} !';
               break;
             } else {
               targetTile.status = TileStatus.water;
@@ -162,19 +162,19 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
           if (hit) {
             break;
           }
-          comunicate = 'Miss...';
+          message = 'Miss...';
           if (enemyShip.health == 0) {
             uncoverNeighbourTiles(enemyShip);
           }
         }
       } else {
-        comunicate = "That is all you can to this round. End your turn?";
+        message = "That is all you can to this round. End your turn?";
       }
 
       _allowAction = false;
     } else {
       if (targetTile.status == TileStatus.water) {
-        comunicate =
+        message =
             '${targetTile.alfaAdress}? You have already checked this tile.';
       } else if (targetTile.status == TileStatus.destroyed) {
         Ship? clickedShip = identifyEnemyShipByTile(
@@ -183,9 +183,9 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
         );
         if (clickedShip != null) {
           if (clickedShip.health == 0) {
-            comunicate = 'Congratulations! This ship is already destroyed.';
+            message = 'Congratulations! This ship is already destroyed.';
           } else if (clickedShip.health != 0) {
-            comunicate = 'Great! You have hit enemy ship. Try to destroy it!';
+            message = 'Great! You have hit enemy ship. Try to destroy it!';
           }
         }
       }
@@ -318,7 +318,7 @@ class _GamePageState extends State<GamePage> {
                 );
                 setState(() {
                   _exitRequested = true;
-                  comunicate = 'Do you want to end the game?';
+                  message = 'Do you want to end the game?';
                 });
               }
             },
@@ -352,7 +352,7 @@ class _GamePageState extends State<GamePage> {
                 onPressed: () {
                   if (!_allowAction) {
                     setState(() {
-                      comunicate = '';
+                      message = '';
                       _exitRequested = false;
                       _showPlayerCard = true;
                       _allowAction = true;
@@ -363,7 +363,7 @@ class _GamePageState extends State<GamePage> {
                     });
                   } else {
                     setState(() {
-                      comunicate = 'Make your move!';
+                      message = 'Make your move!';
                     });
                   }
                 },
@@ -616,7 +616,7 @@ class _GamePageState extends State<GamePage> {
                         SizedBox(height: 20),
 
                         Text(
-                          comunicate,
+                          message,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -725,7 +725,7 @@ class _GamePageState extends State<GamePage> {
                             setState(() {
                               exitGame();
                               isWinner = false;
-                              comunicate = '';
+                              message = '';
                               _allowAction = true;
                               Navigator.pushAndRemoveUntil(
                                 context,

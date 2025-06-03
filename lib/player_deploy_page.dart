@@ -613,7 +613,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
 
     mapside = 4;
     myCustomGameSettings.computerDifficulty = 0;
-    myCustomGameSettings.gameMode = 0;
+    myCustomGameSettings.gameMode = GameMode.notSet;
     myCustomGameSettings.mapsize = 4.0;
 
     for (Player player in myCustomGameSettings.players) {
@@ -872,7 +872,12 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 5),
-            DeploymentListOrContinueButton(currentPlayer: widget.currentPlayer),
+            DeploymentListOrContinueButton(
+              currentPlayer: widget.currentPlayer,
+              onContinue: () {
+                autoDeploy();
+              },
+            ),
           ],
         ),
       ),
@@ -882,9 +887,11 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
 
 class DeploymentListOrContinueButton extends StatefulWidget {
   final Player currentPlayer;
+  final VoidCallback onContinue;
   const DeploymentListOrContinueButton({
     super.key,
     required this.currentPlayer,
+    required this.onContinue,
   });
 
   @override
@@ -968,20 +975,38 @@ class _DeploymentListOrContinueButton
               MaterialPageRoute(
                 builder: (context) {
                   if (myCustomGameSettings.gameMode == 2 &&
-                      myCustomGameSettings.players.length >= 2 &&
-                      myCustomGameSettings.players[0].isReady &&
-                      myCustomGameSettings.players[1].isReady) {
+                      myCustomGameSettings.players.length == 1 &&
+                      myCustomGameSettings.players[0].isReady) {
                     // both players are ready
                     // player vs computer
 
                     prepareMapToDeployNextPlayer();
-                    GameSetup customGameInformation = GameSetup(
-                      myCustomGameSettings,
-                      player2,
-                    );
+                    setUpComputerEnemy();
+                    widget.onContinue();
+
+                    // GameSetup customGameInformation = GameSetup(
+                    //   myCustomGameSettings,
+                    //   player2,
+                    // );
 
                     // deploy computer player
-                    return PlayerDeployPage(customGameInformation, player2);
+                    // return PlayerDeployPage(customGameInformation, player2);
+                    // if pvc and player is ready, set computer and push to game page
+
+                    if (myCustomGameSettings.gameMode == 2 &&
+                        myCustomGameSettings.players.length == 1 &&
+                        myCustomGameSettings.players[0].isReady &&
+                        myCustomGameSettings.players[1].isReady) {
+                      // double check players and initiate the game
+                      return GamePage(
+                        myCustomGameSettings,
+                        myCustomGameSettings.players[0],
+                        myCustomGameSettings.players[1],
+                      );
+                    }
+                    return MyHomePage(
+                      title: 'error 2 players?',
+                    ); // just in case
 
                     // return GamePage(myCustomGameSettings);
                   } else if (myCustomGameSettings.gameMode == 1 &&

@@ -9,8 +9,10 @@ class GameSetupPage extends StatefulWidget {
   State<GameSetupPage> createState() => _GameSetupPageState();
 }
 
+enum GameMode { notSet, pvp, computer }
+
 class GameSettings {
-  int gameMode; // 0 = not-stated, 1 = PVP, 2 = VS computer
+  GameMode gameMode;
   int computerDifficulty; // 0 = not stated, 1 = easy, 2 = normal, 3 = hard
   double mapsize;
   List<Player> players;
@@ -24,7 +26,7 @@ class GameSettings {
 }
 
 GameSettings myCustomGameSettings = GameSettings(
-  gameMode: 0,
+  gameMode: GameMode.notSet,
   computerDifficulty: 0,
   mapsize: 4,
   players: [],
@@ -36,11 +38,11 @@ class _GameSetupPageState extends State<GameSetupPage> {
   // int gameMode = 0; // 0 = not-stated, 1 = PVP, 2 = VS computer
   // int computerDifficulty = 0; // 0 = not stated, 1 = easy, 2 = normal, 3 = hard
 
-  void setGameMode(int mode) {
-    if (mode == 1) {
-      myCustomGameSettings.gameMode = 1;
-    } else if (mode == 2) {
-      myCustomGameSettings.gameMode = 2;
+  void setGameMode(GameMode gameMode) {
+    if (gameMode == GameMode.pvp) {
+      myCustomGameSettings.gameMode = GameMode.pvp;
+    } else if (gameMode == GameMode.computer) {
+      myCustomGameSettings.gameMode = GameMode.computer;
       if (myCustomGameSettings.computerDifficulty == 0) {
         ready = false;
       }
@@ -50,11 +52,11 @@ class _GameSetupPageState extends State<GameSetupPage> {
 
   String getGamemodeLabel() {
     String gamemodeLabel = '';
-    if (myCustomGameSettings.gameMode == 0) {
+    if (myCustomGameSettings.gameMode == GameMode.notSet) {
       gamemodeLabel = '';
-    } else if (myCustomGameSettings.gameMode == 1) {
+    } else if (myCustomGameSettings.gameMode == GameMode.pvp) {
       gamemodeLabel = 'Play against your friend.';
-    } else if (myCustomGameSettings.gameMode == 2) {
+    } else if (myCustomGameSettings.gameMode == GameMode.computer) {
       gamemodeLabel = 'Play against the computer.';
     }
     setState(() {});
@@ -123,23 +125,23 @@ class _GameSetupPageState extends State<GameSetupPage> {
 
   String getNotReadyErrorMessage() {
     String message = '';
-    if (myCustomGameSettings.gameMode == 0) {
+    if (myCustomGameSettings.gameMode == GameMode.notSet) {
       //game mode not set => error
       message = 'Choose game mode.';
       ready = false;
-    } else if (myCustomGameSettings.gameMode == 1 &&
+    } else if (myCustomGameSettings.gameMode == GameMode.pvp &&
         myCustomGameSettings.computerDifficulty == 0) {
       //game mode PVP and computer difficulty not defined => ready
       message =
           'Confirm the map size ${myCustomGameSettings.mapsize.toInt()}x${myCustomGameSettings.mapsize.toInt()} ?';
       ready = true;
-    } else if (myCustomGameSettings.gameMode == 2 &&
+    } else if (myCustomGameSettings.gameMode == GameMode.computer &&
         myCustomGameSettings.computerDifficulty == 0) {
       // game mode PVC and difficulty not defined => error
       message = 'Choose game difficulty.';
       ready = false;
-    } else if ((myCustomGameSettings.gameMode == 1) ||
-        (myCustomGameSettings.gameMode == 2 &&
+    } else if ((myCustomGameSettings.gameMode == GameMode.pvp) ||
+        (myCustomGameSettings.gameMode == GameMode.computer &&
                 myCustomGameSettings.computerDifficulty == 1 ||
             myCustomGameSettings.computerDifficulty == 2)) {
       // game mode PVP or game mode PVC with specified difficulty => ready
@@ -171,7 +173,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: () => setGameMode(1),
+                    onPressed: () => setGameMode(GameMode.pvp),
                     icon: Icon(Icons.person, color: Colors.white),
                     label: Text('PVP', style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
@@ -180,13 +182,13 @@ class _GameSetupPageState extends State<GameSetupPage> {
                         side: BorderSide(
                           width: 2,
                           color:
-                              myCustomGameSettings.gameMode == 1
+                              myCustomGameSettings.gameMode == GameMode.pvp
                                   ? Colors.blue
                                   : Colors.blueGrey,
                         ),
                       ),
                       backgroundColor:
-                          myCustomGameSettings.gameMode == 1
+                          myCustomGameSettings.gameMode == GameMode.pvp
                               ? Colors.blue[300]
                               : Colors.blueGrey,
                     ),
@@ -195,7 +197,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
                   SizedBox(width: 30, height: 1),
 
                   ElevatedButton.icon(
-                    onPressed: () => setGameMode(2),
+                    onPressed: () => setGameMode(GameMode.computer),
                     icon: Icon(Icons.smart_toy_outlined, color: Colors.white),
                     label: Text('PVC', style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
@@ -204,13 +206,13 @@ class _GameSetupPageState extends State<GameSetupPage> {
                         side: BorderSide(
                           width: 2,
                           color:
-                              myCustomGameSettings.gameMode == 2
+                              myCustomGameSettings.gameMode == GameMode.computer
                                   ? Colors.blue
                                   : Colors.blueGrey,
                         ),
                       ),
                       backgroundColor:
-                          myCustomGameSettings.gameMode == 2
+                          myCustomGameSettings.gameMode == GameMode.computer
                               ? Colors.blue[300]
                               : Colors.blueGrey,
                     ),
@@ -220,7 +222,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
               SizedBox(width: 0, height: 10),
 
               Text(getGamemodeLabel()),
-              if (myCustomGameSettings.gameMode == 2)
+              if (myCustomGameSettings.gameMode == GameMode.computer)
                 Column(
                   children: [
                     SizedBox(height: 30),
@@ -342,7 +344,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
                 onChanged: (double value) {
                   setState(() {
                     myCustomGameSettings.mapsize = value;
-                    if (myCustomGameSettings.gameMode == 1) {
+                    if (myCustomGameSettings.gameMode == GameMode.pvp) {
                       ready = true;
                       print('Slider changed — ready = $ready');
                     }
@@ -425,7 +427,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
                         content: Text(getNotReadyErrorMessage()),
                         behavior:
                             SnackBarBehavior
-                                .floating, // Makes it float, not pinned
+                                .floating, // SnackBarBehavior float, not pinned
                         margin: EdgeInsets.only(
                           left: 20,
                           right: 20,
