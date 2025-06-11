@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
 
 import 'dart:math' as math;
-// import 'package:collection/collection.dart';
 import 'package:ships/custom_game_settings.dart';
-// import 'package:ships/custom_game_setup.dart';
-
 import 'custom_player_introduction.dart';
 import 'player_deploy_page.dart';
 import 'main.dart';
@@ -132,8 +130,49 @@ void checkIsWinner(GameManager gameManager) {
   }
 }
 
-void uncoverNeighbourTiles(Ship targetShip) {
-  if (targetShip.tiles == 1) {}
+MapTile? getMapTileByYX(int y, int x) {
+  return mapTiles.firstWhereOrNull((tile) => tile.x == x && tile.y == y);
+}
+
+void uncoverNeighbourTiles(GameManager gameManager, Ship targetShip) {
+  List<MapTile> tilesToUncover = [];
+
+  for (MapTile shipTile in targetShip.locations) {
+    int x = shipTile.x;
+    int y = shipTile.y;
+
+    List<(int, int)> neighbourAdresses = [
+      (y, x + 1),
+      (y, x - 1),
+      (y + 1, x),
+      (y - 1, x),
+    ];
+    for (final (neighbourY, neighbourX) in neighbourAdresses) {
+      // MapTile? neighbourTile = getMapTileByYX(neighbourY, neighbourX);
+      MapTile? neighbourTile = gameManager.currentPlayer.enemyTiles
+          .firstWhereOrNull(
+            (tile) => tile.x == neighbourX && tile.y == neighbourY,
+          );
+
+      if (neighbourTile != null) {
+        tilesToUncover.add(neighbourTile);
+      }
+    }
+  }
+
+  for (MapTile shipOriginalTile in targetShip.locations) {
+    int originalX = shipOriginalTile.x;
+    int originalY = shipOriginalTile.y;
+
+    tilesToUncover.removeWhere(
+      (tile) => tile.x == originalX && tile.y == originalY,
+    );
+  }
+
+  for (MapTile tileToUncover in tilesToUncover) {
+    tileToUncover.status = TileStatus.water;
+    tileToUncover.isExplored = true;
+  }
 }
 
 void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
@@ -153,6 +192,16 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
               targetTile.isExplored = true;
               hit = true;
               message = 'Hit enemy ship at ${targetTile.alfaAdress} !';
+              // directly display that the ship was already destroyed, uncover neighbouring tiles to clear up the map
+              Ship? clickedShip = identifyEnemyShipByTile(
+                gameManager.enemyPlayer,
+                targetTile,
+              );
+              if (clickedShip!.health == 0) {
+                message = "Enemy ship '${clickedShip.shipName}' was sunk!";
+                uncoverNeighbourTiles(gameManager, clickedShip);
+              }
+
               break;
             } else {
               targetTile.status = TileStatus.water;
@@ -163,12 +212,9 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
             break;
           }
           message = 'Miss...';
-          if (enemyShip.health == 0) {
-            uncoverNeighbourTiles(enemyShip);
-          }
         }
       } else {
-        message = "That is all you can to this round. End your turn?";
+        message = "That is all you could do. End your turn?";
       }
 
       _allowAction = false;
@@ -182,10 +228,11 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
           targetTile,
         );
         if (clickedShip != null) {
-          if (clickedShip.health == 0) {
-            message = 'Congratulations! This ship is already destroyed.';
-          } else if (clickedShip.health != 0) {
+          if (clickedShip.health != 0) {
             message = 'Great! You have hit enemy ship. Try to destroy it!';
+          } else if (clickedShip.health == 0) {
+            message = "Congratulations! This ship is already destroyed.";
+            // "Congratulations! This '${clickedShip.shipName}' is already destroyed.";
           }
         }
       }
@@ -467,7 +514,8 @@ class _GamePageState extends State<GamePage> {
                                       );
                                     });
                                   },
-                                  child: Container(
+                                  child: AnimatedContainer(
+                                    duration: Duration(milliseconds: 350),
                                     alignment: Alignment.center,
                                     color: getTileColor(enemyFieldTile.status),
                                     child: Column(

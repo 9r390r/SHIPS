@@ -838,7 +838,8 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
                             MapTile clickedTile = indexToMaptile(index);
                             gridTapPlaceShipTile(clickedTile);
                           },
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: Duration(milliseconds: 200),
                             alignment: Alignment.center,
                             color: getTileColor(tile.status),
                             child: Column(
@@ -1009,7 +1010,7 @@ class _DeploymentListOrContinueButton
                     ); // just in case
 
                     // return GamePage(myCustomGameSettings);
-                  } else if (myCustomGameSettings.gameMode == 1 &&
+                  } else if (myCustomGameSettings.gameMode == GameMode.pvp &&
                       myCustomGameSettings.players.length >= 2 &&
                       myCustomGameSettings.players[0].isReady &&
                       myCustomGameSettings.players[1].isReady) {
