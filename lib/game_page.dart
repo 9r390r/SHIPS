@@ -42,7 +42,7 @@ void exitGame() {
   for (Player player in myCustomGameSettings.players) {
     player.avatar = Avatar(Icons.question_mark_rounded, Colors.grey);
     player.fraction = null;
-    player.name = '';
+    player.playerName = '';
     player.shipTypes.clear();
     player.ships.clear();
     player.playerID = 0;
@@ -125,8 +125,6 @@ Ship? identifyEnemyShipByTile(PlayerState enemyPlayer, MapTile checkTile) {
 void checkIsWinner(GameManager gameManager) {
   if (gameManager.enemyPlayer.player.currentHealth == 0) {
     isWinner = true;
-    message =
-        "${gameManager.currentPlayer.player.name}'s all ships have been destroyed! ${gameManager.currentPlayer.player.name} wins!";
   }
 }
 
@@ -607,7 +605,10 @@ class _GamePageState extends State<GamePage> {
 
                                       children: [
                                         Text(
-                                          gameManager.currentPlayer.player.name,
+                                          gameManager
+                                              .currentPlayer
+                                              .player
+                                              .playerName,
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
@@ -633,7 +634,10 @@ class _GamePageState extends State<GamePage> {
                                       spacing: 10,
                                       children: [
                                         Text(
-                                          gameManager.enemyPlayer.player.name,
+                                          gameManager
+                                              .enemyPlayer
+                                              .player
+                                              .playerName,
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
@@ -748,14 +752,19 @@ class _GamePageState extends State<GamePage> {
                         ),
                         SizedBox(height: 30),
                         Text(
-                          "${gameManager.currentPlayer.player.name} wins!",
+                          "${gameManager.currentPlayer.player.playerName} wins!",
                           style: TextStyle(
                             fontSize: 60,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          gameManager.currentPlayer.player.fraction!,
+                          gameManager
+                              .currentPlayer
+                              .player
+                              .fraction!
+                              .name
+                              .display,
                           style: TextStyle(fontSize: 13),
                         ),
                         SizedBox(height: 40),
@@ -914,8 +923,9 @@ String getQuote(String fraction) {
 class _PlayerCardState extends State<PlayerCard> {
   @override
   Widget build(BuildContext context) {
-    String currentFraction = widget.currentPlayerState.player.fraction!;
-    String currentPlayerName = widget.currentPlayerState.player.name;
+    String currentFraction =
+        widget.currentPlayerState.player.fraction!.name.display;
+    String currentPlayerName = widget.currentPlayerState.player.playerName;
     Color currentColor = widget.currentPlayerState.player.avatar.background;
     IconData currentIcon = widget.currentPlayerState.player.avatar.icon;
 

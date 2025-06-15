@@ -569,7 +569,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
         tile.adresColor = getCoordinateContrastingColor(TileStatus.water);
         availableTiles.add(tile);
       }
-      widget.currentPlayer.shipTypes = calculteShipTypeQuantities(
+      widget.currentPlayer.shipTypes = calculateShipTypesLineupForPLayer(
         mapsize: widget.gameSetup.difficultyGameModeAndMapSettings.mapsize,
         fraction: widget.currentPlayer.fraction!,
         playerID: widget.currentPlayer.playerID,
@@ -619,7 +619,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
     for (Player player in myCustomGameSettings.players) {
       player.avatar = Avatar(Icons.question_mark_rounded, Colors.grey);
       player.fraction = null;
-      player.name = '';
+      player.playerName = '';
       player.shipTypes.clear();
       player.ships.clear();
       player.playerID = 0;
@@ -640,7 +640,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
   void autoDeploy() {
     print('----------------------> auto deploy');
     int failCount = 0;
-    const int failLimit = 20;
+    const int failLimit = 10;
     final random = math.Random();
 
     // randomSelect(); // clicks on first tile (of corresponding ship) on the map
@@ -720,7 +720,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            'Deploy Your ${widget.currentPlayer.fraction}',
+            'Deploy Your ${widget.currentPlayer.fraction!.name.display}',
             style: TextStyle(color: Colors.black, fontSize: 24),
           ),
           backgroundColor: playerColor,
@@ -975,7 +975,7 @@ class _DeploymentListOrContinueButton
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  if (myCustomGameSettings.gameMode == 2 &&
+                  if (myCustomGameSettings.gameMode == GameMode.computer &&
                       myCustomGameSettings.players.length == 1 &&
                       myCustomGameSettings.players[0].isReady) {
                     // both players are ready
@@ -994,7 +994,7 @@ class _DeploymentListOrContinueButton
                     // return PlayerDeployPage(customGameInformation, player2);
                     // if pvc and player is ready, set computer and push to game page
 
-                    if (myCustomGameSettings.gameMode == 2 &&
+                    if (myCustomGameSettings.gameMode == GameMode.computer &&
                         myCustomGameSettings.players.length == 1 &&
                         myCustomGameSettings.players[0].isReady &&
                         myCustomGameSettings.players[1].isReady) {
@@ -1028,7 +1028,7 @@ class _DeploymentListOrContinueButton
                     // Only add a new player if there are fewer than 2
                     if (myCustomGameSettings.players.length < 2) {
                       Player nweCurrentPlayer = Player(
-                        name: '',
+                        playerName: '',
                         avatar: Avatar(
                           Icons.question_mark_rounded,
                           Colors.grey,
@@ -1057,7 +1057,7 @@ class _DeploymentListOrContinueButton
             );
           },
           label: Text(
-            'Save and sontinue!',
+            'Save and continue!',
             style: TextStyle(color: Colors.white),
           ),
           icon: Icon(Icons.check_rounded, color: Colors.white),

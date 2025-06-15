@@ -398,7 +398,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
                       MaterialPageRoute(
                         builder: (context) {
                           Player currentPlayer = Player(
-                            name: '',
+                            playerName: '',
                             avatar: Avatar(
                               Icons.question_mark_rounded,
                               Colors.grey,

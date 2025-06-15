@@ -23,7 +23,7 @@ class CustomPlayerIntroduction extends StatefulWidget {
 bool _exitRequested = false;
 List<Player> players = [];
 int idbase = 1;
-String? selectedFraction;
+// String? selectedFraction;
 
 bool isFraction = false;
 bool isName = false;
@@ -86,15 +86,158 @@ class Ship {
   }
 }
 
+enum FractionName { navy, pirates, federation }
+
+Fraction? selectedFraction;
+
+Map<FractionName, Fraction> fractions = {
+  FractionName.navy: navyFraction,
+  FractionName.pirates: piratesFraction,
+  FractionName.federation: federationFraction,
+};
+
+enum ShipSize { size1, size2, size3, size4, size5, size6 }
+
+Map<ShipSize, int> shipSizeTiles = {
+  ShipSize.size1: 1,
+  ShipSize.size2: 2,
+  ShipSize.size3: 3,
+  ShipSize.size4: 4,
+  ShipSize.size5: 5,
+  ShipSize.size6: 6,
+};
+
+class Fraction {
+  final FractionName name;
+  final String description;
+  final Map<ShipSize, double> shipSizeChanceConfig;
+  final Map<ShipSize, String> shipNameConfig;
+
+  Fraction({
+    required this.name,
+    required this.description,
+    required this.shipSizeChanceConfig,
+    required this.shipNameConfig,
+  });
+}
+
+Fraction navyFraction = Fraction(
+  name: FractionName.navy,
+  description:
+      "The Navy goes all-in with their armoured ships\ncovering vast areas of the sea.\n(Easier to detect but most durable)",
+  shipSizeChanceConfig: {
+    ShipSize.size1: 0.1,
+    ShipSize.size2: 0.3,
+    ShipSize.size3: 0.5,
+    ShipSize.size4: 0.4,
+    ShipSize.size5: 0.0,
+    ShipSize.size6: 0.1,
+  },
+  shipNameConfig: {
+    ShipSize.size1: "Patrol Boat",
+    ShipSize.size2: "Interceptor",
+    ShipSize.size3: "Destroyer",
+    ShipSize.size4: "Battlecrusier",
+    ShipSize.size5: "",
+    ShipSize.size6: "Mothership",
+  },
+);
+
+Fraction piratesFraction = Fraction(
+  name: FractionName.pirates,
+  description:
+      "Pirates, me lad, we don't play fair.\nWe be strikin' from the shadows, arr!\n(Scattered and stealthy but fragile)",
+  shipSizeChanceConfig: {
+    ShipSize.size1: 0.4,
+    ShipSize.size2: 0.3,
+    ShipSize.size3: 0.21,
+    ShipSize.size4: 0.09,
+    ShipSize.size5: 0.0,
+    ShipSize.size6: 0.0,
+  },
+  shipNameConfig: {
+    ShipSize.size1: "Seaghoul",
+    ShipSize.size2: "Brigantine",
+    ShipSize.size3: "Storm Queen",
+    ShipSize.size4: "Shadowstalker",
+    ShipSize.size5: "",
+    ShipSize.size6: "",
+  },
+);
+
+Fraction federationFraction = Fraction(
+  name: FractionName.federation,
+  description:
+      "The Federation, driven by profit and efficiency,\nalways deploys balanced and versatile fleet.\n(Standard and flexible lineup)",
+  shipSizeChanceConfig: {
+    ShipSize.size1: 0.4,
+    ShipSize.size2: 0.3,
+    ShipSize.size3: 0.21,
+    ShipSize.size4: 0.09,
+    ShipSize.size5: 0.0,
+    ShipSize.size6: 0.0,
+  },
+  shipNameConfig: {
+    ShipSize.size1: "Sanction Drone",
+    ShipSize.size2: "Costal Janitor",
+    ShipSize.size3: "Armed Science Vessel",
+    ShipSize.size4: "Corporate Anihilator",
+    ShipSize.size5: "",
+    ShipSize.size6: "",
+  },
+);
+
+extension FractionNameDisplay on FractionName {
+  String get display {
+    switch (this) {
+      case FractionName.navy:
+        return "Navy";
+      case FractionName.pirates:
+        return "Pirates";
+      case FractionName.federation:
+        return "Federation";
+    }
+  }
+}
+
+List<ShipTypeForPlayerAndFraction> calculateShipTypesLineupForPLayer({
+  required double mapsize,
+  required Fraction fraction,
+  required int playerID,
+}) {
+  List<ShipTypeForPlayerAndFraction> lineup = [];
+
+  final reversedShipSizes = ShipSize.values.reversed;
+
+  for (ShipSize currentShipSize in reversedShipSizes) {
+    double thisShipSizeQuantity =
+        fraction.shipSizeChanceConfig[currentShipSize]!;
+    int thisShipQuantity = (mapsize * thisShipSizeQuantity).round();
+    if (thisShipQuantity > 0) {
+      lineup.add(
+        ShipTypeForPlayerAndFraction(
+          fractionName: fraction.name,
+          typeName: fraction.shipNameConfig[currentShipSize]!,
+          tiles: shipSizeTiles[currentShipSize]!,
+          quantity: thisShipQuantity,
+          playerID: playerID,
+        ),
+      );
+    }
+  }
+
+  return lineup;
+}
+
 class ShipTypeForPlayerAndFraction {
-  final String fraction;
+  final FractionName fractionName;
   final String typeName;
   final int tiles;
   final int quantity;
   final int playerID;
 
   ShipTypeForPlayerAndFraction({
-    required this.fraction,
+    required this.fractionName,
     required this.typeName,
     required this.tiles,
     required this.quantity,
@@ -104,9 +247,9 @@ class ShipTypeForPlayerAndFraction {
 
 class Player {
   // stroing information about player made in this page
-  String name;
+  String playerName;
   Avatar avatar;
-  String? fraction;
+  Fraction? fraction;
   List<ShipTypeForPlayerAndFraction>
   shipTypes; // for generating configuration (quantity)
   List<Ship> ships; // actual individual ships in game logic
@@ -116,7 +259,7 @@ class Player {
   late int currentHealth;
 
   Player({
-    required this.name,
+    required this.playerName,
     required this.avatar,
     required this.fraction,
     required this.shipTypes,
@@ -135,196 +278,15 @@ int generatePlayerID() {
   return idbase++;
 }
 
-// Player player1 = Player(
-//   name: '',
-//   avatar: playerUneditedAvatar,
-//   fraction: null,
-//   ships: [],
-//   shipTypes: [],
-//   playerID: generatePlayerID(),
-//   isReady: false,
-// ); // def player with basic avatar (grey '?'), other fields empty for further setup
-
-List<ShipTypeForPlayerAndFraction> calculteShipTypeQuantities({
-  required double mapsize,
-  required String fraction,
-  required int playerID,
-}) {
-  List<Map<String, dynamic>> config = [];
-  double x = mapsize;
-
-  double nonLinearFactor(double x) {
-    return x > 5 ? (math.pow((x - 5), 1.3) / 10) : 0;
-  }
-
-  double modifier = nonLinearFactor(x);
-
-  double coverageModifier = 0.85;
-
-  double adjustCoverageModifier(double mapsize) {
-    double coverageModifier = 0.85;
-    coverageModifier = mapsize * math.pow(coverageModifier, mapsize) / 2.8;
-    return coverageModifier;
-  }
-
-  coverageModifier = adjustCoverageModifier(mapsize);
-
-  if (fraction == 'Navy') {
-    config = [
-      {
-        'shipName': 'Mothership',
-        'tiles': 6,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (0.2 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Battlecruiser',
-        'tiles': 4,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (0.7 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Destroyer',
-        'tiles': 3,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (1.2 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Interceptor',
-        'tiles': 2,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (1 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Patrol Boat',
-        'tiles': 1,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (0.9 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-    ];
-  } else if (fraction == 'Pirates') {
-    config = [
-      {
-        'shipName': 'Storm Queen',
-        'tiles': 3,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (0.6 * x + 0.2 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Brigantine',
-        'tiles': 2,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (1.16 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Seaghoul',
-        'tiles': 1,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (1.86 * x + 0.5 * modifier - 4))
-                .round(),
-      },
-    ];
-  } else if (fraction == 'Federation') {
-    config = [
-      {
-        'shipName': 'Corporate Anihilator',
-        'tiles': 4,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (0.5 * x + 0.25 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Armed Science Vessel',
-        'tiles': 3,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (1.05 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Costal Janitor',
-        'tiles': 2,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (1.2 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-      {
-        'shipName': 'Sanction Drone',
-        'tiles': 1,
-        'quantity':
-            (coverageModifier *
-                    coverageModifier /
-                    2 *
-                    (1.09 * x + 0.3 * modifier - 4))
-                .round(),
-      },
-    ];
-  }
-  // ships with quantity = 0 are dropped in the if statement. only ships that have positive tile count are generated
-
-  return config
-      .where((data) => data['quantity'] != null && data['quantity'] > 0)
-      .map((data) {
-        return ShipTypeForPlayerAndFraction(
-          typeName: data['shipName'],
-          tiles: data['tiles'],
-          quantity: data['quantity'],
-          fraction: fraction,
-          playerID: playerID,
-        );
-      })
-      .whereType<ShipTypeForPlayerAndFraction>()
-      .toList();
-}
-
 void displayShipTypes(
-  String fraction,
+  FractionName fractionName,
   List<ShipTypeForPlayerAndFraction> shipTypes,
 ) {
   print('');
   print(shipTypes);
   print('===================================');
   print('PLAYER 1 SETUP:');
-  print('==========  $fraction ============');
+  print('==========  $fractionName ============');
   for (ShipTypeForPlayerAndFraction shipType in shipTypes) {
     print(
       '${shipType.typeName}, (${shipType.tiles} tiles) x${shipType.quantity}',
@@ -345,23 +307,23 @@ class GameSetup {
 Player setUpComputerEnemy() {
   int newID = generatePlayerID();
   late Player computerPlayer = Player(
-    name: '',
+    playerName: '',
     avatar: Avatar(Icons.smart_toy_outlined, getComputerAvatarRandomColor()),
-    fraction: '',
+    fraction: randomFraction(),
     shipTypes: [],
     ships: [],
     playerID: newID,
     isReady: false,
     totalHealth: 0,
   );
-  if (myCustomGameSettings.gameMode == 2) {
-    //if the gamemode is 2 (PVC)
-    String chosenRandomFraction = randomFraction();
+  if (myCustomGameSettings.gameMode == GameMode.computer) {
+    Fraction chosenRandomFraction = randomFraction();
+
     computerPlayer = Player(
-      name: generateComputerName(),
+      playerName: generateComputerName(),
       avatar: Avatar(Icons.smart_toy_outlined, getComputerAvatarRandomColor()),
       fraction: chosenRandomFraction,
-      shipTypes: calculteShipTypeQuantities(
+      shipTypes: calculateShipTypesLineupForPLayer(
         mapsize: myCustomGameSettings.mapsize,
         fraction: chosenRandomFraction,
         playerID: newID,
@@ -376,7 +338,7 @@ Player setUpComputerEnemy() {
   print('');
   print("==========================================================");
   print("Auto set up of a Computer Enemy:");
-  print("Computer Name: ${computerPlayer.name}");
+  print("Computer Name: ${computerPlayer.playerName}");
   print("Computer Fraction: ${computerPlayer.fraction}");
   print("==========================================================");
   myCustomGameSettings.players.add(computerPlayer);
@@ -502,11 +464,11 @@ List<IconData?> allIcons = [
   Icons.houseboat_rounded,
 ];
 
-String randomFraction() {
-  List<String> fractions = ['Navy', 'Pirates', 'Federation'];
+Fraction randomFraction() {
+  List<FractionName> fractionsNames = fractions.keys.toList();
   final random = math.Random();
-  int index = random.nextInt(fractions.length);
-  return fractions[index];
+  int index = random.nextInt(fractionsNames.length);
+  return fractions.values.toList()[index];
 }
 
 GameSetup savedGameSettingsWithPlayers() {
@@ -523,6 +485,7 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
   @override
   void initState() {
     super.initState();
+    selectedFraction = null;
   }
 
   void test() {
@@ -562,23 +525,23 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
     return selectedColor;
   }
 
-  String fractionDescription(String fraction) {
-    String description = '';
+  // String fractionDescription(String fraction) {
+  //   String description = '';
 
-    setState(() {
-      if (fraction == 'Navy') {
-        description =
-            "Navy deploys fewer but very powerful ships\nthat are more difficult to sink.\n(Heavy and powerful but easy to target)";
-      } else if (fraction == 'Pirates') {
-        description =
-            "Pirates, me lad, we don't play fair.\nWe be strikin' from shadows, arr.\n(Scattered and stealthy but fragile)";
-      } else if (fraction == 'Federation') {
-        description =
-            "Balanced and versatile.\nThe Federation adapts to any mission.\n(Standard, balanced lineup)";
-      }
-    });
-    return description;
-  }
+  //   setState(() {
+  //     if (fraction == 'Navy') {
+  //       description =
+  //           "Navy deploys fewer but very powerful ships\nthat are more difficult to sink.\n(Heavy and powerful but easy to target)";
+  //     } else if (fraction == 'Pirates') {
+  //       description =
+  //           "Pirates, me lad, we don't play fair.\nWe be strikin' from shadows, arr.\n(Scattered and stealthy but fragile)";
+  //     } else if (fraction == 'Federation') {
+  //       description =
+  //           "Balanced and versatile.\nThe Federation adapts to any mission.\n(Standard, balanced lineup)";
+  //     }
+  //   });
+  //   return description;
+  // }
 
   void exitGame() {
     // clearMapResetDeploy();
@@ -596,7 +559,7 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
     for (Player player in myCustomGameSettings.players) {
       player.avatar = Avatar(Icons.question_mark_rounded, Colors.grey);
       player.fraction = null;
-      player.name = '';
+      player.playerName = '';
       player.shipTypes.clear();
       player.ships.clear();
       player.playerID = 0;
@@ -713,7 +676,8 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
                           onChanged: (String input) {
                             setState(() {
                               isName = true;
-                              widget.currentPlayer.name = input.trimRight();
+                              widget.currentPlayer.playerName =
+                                  input.trimRight();
                             });
                           },
                         ),
@@ -794,33 +758,31 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
             ),
             SizedBox(height: 40),
             Text('Fraction'),
-
-            DropdownButton<String>(
+            DropdownButton<Fraction>(
               items:
-                  <String>[
-                    'Navy',
-                    'Pirates',
-                    'Federation',
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
+                  fractions.values.map((Fraction fraction) {
+                    return DropdownMenuItem<Fraction>(
+                      value: fraction,
+                      child: Text(fraction.name.display),
                     );
                   }).toList(),
-              hint: Text('Select your Fraction'),
-              value: widget.currentPlayer.fraction, // can be null
-              onChanged: (String? newValue) {
+              hint: const Text('Select your Fraction'),
+              value: selectedFraction, // can be null
+              onChanged: (Fraction? newFraction) {
                 _exitRequested = false;
-                if (newValue != null) {
+                if (newFraction != null) {
                   setState(() {
                     isFraction = true;
-                    widget.currentPlayer.fraction = newValue;
-                    selectedFraction = newValue;
+                    widget.currentPlayer.isReady = true;
+                    selectedFraction = newFraction;
+                    widget.currentPlayer.fraction = selectedFraction;
 
                     // generate types of ships with quantities
-                    widget.currentPlayer.shipTypes = calculteShipTypeQuantities(
+                    widget
+                        .currentPlayer
+                        .shipTypes = calculateShipTypesLineupForPLayer(
                       mapsize: myCustomGameSettings.mapsize,
-                      fraction: widget.currentPlayer.fraction!,
+                      fraction: newFraction,
                       playerID: widget.currentPlayer.playerID,
                     );
 
@@ -831,19 +793,16 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
 
                     // debug: display generated shiptypes lineup
                     displayShipTypes(
-                      widget.currentPlayer.fraction!,
+                      widget.currentPlayer.fraction!.name,
                       widget.currentPlayer.shipTypes,
                     );
-                    // fractioniIsChosen = true;
                   });
                 }
               },
             ),
             SizedBox(height: 20),
             Text(
-              fractioniIsChosen
-                  ? fractionDescription(widget.currentPlayer.fraction!)
-                  : '',
+              isFraction ? widget.currentPlayer.fraction!.description : '',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 20, fontStyle: FontStyle.italic),
             ),
