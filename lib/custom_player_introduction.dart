@@ -127,9 +127,9 @@ Fraction navyFraction = Fraction(
       "The Navy goes all-in with their armoured ships\ncovering vast areas of the sea.\n(Easier to detect but most durable)",
   shipSizeChanceConfig: {
     ShipSize.size1: 0.1,
-    ShipSize.size2: 0.3,
-    ShipSize.size3: 0.5,
-    ShipSize.size4: 0.4,
+    ShipSize.size2: 0.2,
+    ShipSize.size3: 0.4,
+    ShipSize.size4: 0.3,
     ShipSize.size5: 0.0,
     ShipSize.size6: 0.1,
   },
@@ -208,11 +208,13 @@ List<ShipTypeForPlayerAndFraction> calculateShipTypesLineupForPLayer({
   List<ShipTypeForPlayerAndFraction> lineup = [];
 
   final reversedShipSizes = ShipSize.values.reversed;
+  double coverageModifier = 0.8;
 
   for (ShipSize currentShipSize in reversedShipSizes) {
     double thisShipSizeQuantity =
         fraction.shipSizeChanceConfig[currentShipSize]!;
-    int thisShipQuantity = (mapsize * thisShipSizeQuantity).round();
+    int thisShipQuantity =
+        (mapsize * thisShipSizeQuantity * coverageModifier).round();
     if (thisShipQuantity > 0) {
       lineup.add(
         ShipTypeForPlayerAndFraction(

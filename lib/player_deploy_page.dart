@@ -246,11 +246,15 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
   }
 
   bool checkIsShipTilePlacedNextToExisitingShipTile(MapTile tile) {
-    if (widget.currentPlayer.ships[n].tiles == 1) {
+    final thisShipIs1Tile = widget.currentPlayer.ships[n].tiles == 1;
+    if (thisShipIs1Tile) {
+      // does not aply to a ship which is 1-tile only
       return true;
     } else if (thisShipPlacedTiles == 0) {
+      // does not apply to a ship which deployment is just starting
       return true;
     }
+    // all other conditions need to be checked, new tile must be placed next to the exsiting one
     bool isNextTo = false;
 
     int x = tile.x;
@@ -265,12 +269,15 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
 
     for (final (neighbourY, neighbourX) in neighbourAdresses) {
       MapTile? checkedTile = getMapTileByYX(neighbourY, neighbourX);
-
-      if (widget.currentPlayer.ships[n].locations.contains(checkedTile)) {
+      final isPlacedNextToExisingShipTile = widget
+          .currentPlayer
+          .ships[n]
+          .locations
+          .contains(checkedTile);
+      if (isPlacedNextToExisingShipTile) {
         return true;
       }
     }
-
     return isNextTo;
   }
 
@@ -279,14 +286,13 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
     // funtion marks left and right maptiles as blocked for vertical ship
 
     if (isVertical) {
-      List<List<int>> unallowedVerticalNeighbours = [
-        [shipTile.y, shipTile.x + 1],
-        [shipTile.y, shipTile.x - 1],
+      List<(int, int)> unallowedVerticalNeighbours = [
+        (shipTile.y, shipTile.x + 1),
+        (shipTile.y, shipTile.x - 1),
       ];
-      for (var set in unallowedVerticalNeighbours) {
-        int y = set[0];
-        int x = set[1];
-        if (x >= 0 && x < mapside && y >= 0 && y < mapside) {
+      for (final (y, x) in unallowedVerticalNeighbours) {
+        final isInMapRange = x >= 0 && x < mapside && y >= 0 && y < mapside;
+        if (isInMapRange) {
           MapTile maptileToBlock = getMapTileByYX(y, x)!;
           maptileToBlock.status = TileStatus.blocked;
           availableTiles.remove(maptileToBlock);
@@ -294,13 +300,11 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
         }
       }
     } else {
-      List<List<int>> unallowedHorizontalNeighbours = [
-        [shipTile.y + 1, shipTile.x],
-        [shipTile.y - 1, shipTile.x],
+      List<(int, int)> unallowedHorizontalNeighbours = [
+        (shipTile.y + 1, shipTile.x),
+        (shipTile.y - 1, shipTile.x),
       ];
-      for (var set in unallowedHorizontalNeighbours) {
-        int y = set[0];
-        int x = set[1];
+      for (final (y, x) in unallowedHorizontalNeighbours) {
         if (x >= 0 && x < mapside && y >= 0 && y < mapside) {
           MapTile maptileToBlock = getMapTileByYX(y, x)!;
           maptileToBlock.status = TileStatus.blocked;
@@ -385,18 +389,18 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
       int thisOneTileShipY = tile.y;
       int thisOneTileShipX = tile.x;
 
-      List<List<int>> oneTileShipNeighbourAdresses = [
-        [thisOneTileShipY + 1, thisOneTileShipX],
-        [thisOneTileShipY - 1, thisOneTileShipX],
-        [thisOneTileShipY, thisOneTileShipX + 1],
-        [thisOneTileShipY, thisOneTileShipX - 1],
+      List<(int, int)> oneTileShipNeighbourAdresses = [
+        (thisOneTileShipY + 1, thisOneTileShipX),
+        (thisOneTileShipY - 1, thisOneTileShipX),
+        (thisOneTileShipY, thisOneTileShipX + 1),
+        (thisOneTileShipY, thisOneTileShipX - 1),
       ];
 
-      for (List<int> oneTileShipNeighbourXY in oneTileShipNeighbourAdresses) {
-        int neighbourY = oneTileShipNeighbourXY[0];
-        int neighbourX = oneTileShipNeighbourXY[1];
-        if ((neighbourY < mapside && neighbourY >= 0) &&
-            (neighbourX < mapside && neighbourX >= 0)) {
+      for (final (neighbourY, neighbourX) in oneTileShipNeighbourAdresses) {
+        final isNeighbourInMapRange =
+            (neighbourY < mapside && neighbourY >= 0) &&
+            (neighbourX < mapside && neighbourX >= 0);
+        if (isNeighbourInMapRange) {
           MapTile tileToBlock = getMapTileByYX(neighbourY, neighbourX)!;
           tileToBlock.status = TileStatus.blocked;
           availableTiles.remove(tileToBlock);
@@ -411,10 +415,10 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
     }
 
     setState(() {
-      if (currentShip.locations.length >= 2) {
+      final isThisShipLargerThanTwoTiles = currentShip.locations.length >= 2;
+      if (isThisShipLargerThanTwoTiles) {
         bool isVertical =
             currentShip.locations[0].x == currentShip.locations[1].x;
-
         if (isVertical) {
           // print('--------> this ship is vertical');
           currentShip.isVertical = true;
@@ -432,20 +436,21 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
     int y = tile.y;
     int x = tile.x;
 
-    List<List<int>> neighbourAdresses = [
-      [y + 1, x],
-      [y - 1, x],
-      [y, x + 1],
-      [y, x - 1],
+    List<(int, int)> neighbourAdresses = [
+      (y + 1, x),
+      (y - 1, x),
+      (y, x + 1),
+      (y, x - 1),
     ];
 
-    for (List<int> neighbourYXpair in neighbourAdresses) {
-      int neighbourY = neighbourYXpair[0];
-      int neighbourX = neighbourYXpair[1];
+    for (final (neighbourY, neighbourX) in neighbourAdresses) {
       for (MapTile tileToUpdate in availableTiles) {
-        if (x >= 0 && x < mapside && y >= 0 && y < mapside) {
+        final isInMapRange = x >= 0 && x < mapside && y >= 0 && y < mapside;
+        if (isInMapRange) {
           // safetycheck, are accessed indexes only existing ones
-          if (tileToUpdate.y == neighbourY && tileToUpdate.x == neighbourX) {
+          final tileToUpdateIsNeighbourTile =
+              tileToUpdate.y == neighbourY && tileToUpdate.x == neighbourX;
+          if (tileToUpdateIsNeighbourTile) {
             tileToUpdate.status = TileStatus.allowed;
             greenTiles.add(tileToUpdate);
           }
@@ -470,30 +475,40 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
   }
 
   MapTile gridTapPlaceShipTile(MapTile clickedTile) {
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   =>   n = $n");
     _exitRequested = false;
     // MapTile clickedTile = mapTiles[index];
     setState(() {
-      if (shipsToDeploySimplified.isNotEmpty) {
+      final hasShipsToDeploy = shipsToDeploySimplified.isNotEmpty;
+      if (hasShipsToDeploy) {
         // Are there ships to deploy?
         // list of simplified ships is a list of total ships (their tile value) that player will deploy (not just types of ships 'destroyer', like in the class),
         // [3, 2, 2] = one 3-tile ship and two 2-tile ships
         // as long as this list contains elements, there are ships that have to be deployed
 
-        if (shipsToDeploySimplified[0] > 0) {
+        final hasTilesToDeploy = shipsToDeploySimplified[0] > 0;
+        if (hasTilesToDeploy) {
           // Are there still tiles to place for the current ship?
           // always starting deploying from the first item, we check if the current ship is deployed entirely or not yet
           // if it is not deployed yet (if shipsToDeploySimplified[0] > 0) we can edit the selected tile 'clickedTile'
-          if (!checkIsShipTilePlacedNextToExisitingShipTile(clickedTile)) {
+          final isNotPlacedCorrectly =
+              !checkIsShipTilePlacedNextToExisitingShipTile(clickedTile);
+          if (isNotPlacedCorrectly) {
             return;
           }
           _editClickedTile(clickedTile, n);
-          if (shipsToDeploySimplified[0] == 0) {
+          final hasNoTilesToDeploy = shipsToDeploySimplified[0] == 0;
+          if (hasNoTilesToDeploy) {
             shipsToDeploySimplified.removeAt(0);
+            widget.currentPlayer.ships[n].isDeployed = true;
             n++;
+            thisShipPlacedTiles = 0;
+
             availableTiles.remove(clickedTile);
             //???? greenTiles.remove(clickedTile);
-            thisShipPlacedTiles = 0;
-            widget.currentPlayer.ships[n].isDeployed = true;
+            print(
+              "===========================> range error?? n=$n, ships length=${widget.currentPlayer.ships.length}",
+            );
             print('');
             _printDeployLog();
             print('........................');
@@ -514,8 +529,14 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
 
   void _editClickedTile(MapTile tile, int n) {
     setState(() {
-      if ((tile.status == TileStatus.water && thisShipPlacedTiles == 0) ||
-          (thisShipPlacedTiles > 0 && tile.status == TileStatus.allowed)) {
+      final isTilePlacedOnCorrectLocation =
+          (tile.status == TileStatus.water && thisShipPlacedTiles == 0) ||
+          (thisShipPlacedTiles > 0 && tile.status == TileStatus.allowed);
+      final isUndoCandidate =
+          tile.status == TileStatus.ship &&
+          !widget.currentPlayer.ships[n].isDeployed;
+      final isTileBloced = tile.status == TileStatus.blocked;
+      if (isTilePlacedOnCorrectLocation) {
         if (!availableTiles.contains(tile)) {
           return;
         }
@@ -528,23 +549,25 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
         tile.adresColor = getCoordinateContrastingColor(
           TileStatus.ship,
         ); // set adress color
-        // in the original ship database for player(1) the selected tile is being added to the locations list
+        // in the original ship database for player the selected tile is being added to the locations list
         widget.currentPlayer.ships[n].locations.add(tile);
         shipsToDeploySimplified[0]--; // decrease the current ship tile count
-      } else if (tile.status == TileStatus.ship &&
-          !widget.currentPlayer.ships[n].isDeployed) {
-        availableTiles.add(tile);
-
-        // reversed logic for undo ship tile deployment. (changing colours and adding +1 back to lists and counters)
-        currentPlayerDeployProgress++; // global counter
-        tile.status = TileStatus.water; // set tile color
-        tile.adresColor = getCoordinateContrastingColor(
-          TileStatus.water, // set adress color
-        );
-        shipsToDeploySimplified[0]++; // increase the the current ship tile count
-        return; // after undo
-      } else if (tile.status == TileStatus.blocked) {
+      } else if (isUndoCandidate) {
         return;
+        // undo not allowed for stability reasons, => can restart deploy by clearing the map
+        // undo logic could be reintroduced in the future versions
+
+        // availableTiles.add(tile);
+        // // reversed logic for undo ship tile deployment. (changing colours and adding +1 back to lists and counters)
+        // currentPlayerDeployProgress++; // global counter
+        // tile.status = TileStatus.water; // set tile color
+        // tile.adresColor = getCoordinateContrastingColor(
+        //   TileStatus.water, // set adress color
+        // );
+        // shipsToDeploySimplified[0]++; // increase the the current ship tile count
+      } else if (isTileBloced) {
+        return;
+        // don't allow selecting on blocked tiles under any conditions
       }
       showAllowedBlockedTiles(tile);
     });
@@ -672,15 +695,6 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
             deployError = true;
             break;
           }
-
-          if (deployError) {
-            break;
-          }
-
-          if (deployError) {
-            // just in case XD
-            break;
-          }
         }
         if (deployError) {
           print('error in auto-deploy');
@@ -692,7 +706,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
         failCount++;
         if (failCount == failLimit) {
           print(
-            'Aborting auto-deploy! error code: "Too many failed attempts!"',
+            'Aborting auto-deploy! error code: "($failCount/$failLimit) failed attempts!"',
           );
           clearMapResetDeploy();
           autoDeploy();
@@ -904,14 +918,12 @@ class DeploymentListOrContinueButton extends StatefulWidget {
 class _DeploymentListOrContinueButton
     extends State<DeploymentListOrContinueButton> {
   void reverseBlockedTilesBackToWaterStatus() {
-    setState(() {
-      for (MapTile tile in mapTiles) {
-        if (tile.status == TileStatus.blocked) {
-          tile.status = TileStatus.water;
-        }
+    for (MapTile tile in mapTiles) {
+      if (tile.status == TileStatus.blocked) {
+        tile.status = TileStatus.water;
       }
-      mapTilesNotifier.value = List.from(mapTiles); // triggers UI update
-    });
+    }
+    mapTilesNotifier.value = List.from(mapTiles); // triggers UI update
   }
 
   @override
@@ -964,7 +976,9 @@ class _DeploymentListOrContinueButton
         ),
       );
     } else {
-      reverseBlockedTilesBackToWaterStatus();
+      setState(() {
+        reverseBlockedTilesBackToWaterStatus();
+      });
       return Padding(
         padding: EdgeInsets.all(70),
         child: ElevatedButton.icon(
@@ -975,9 +989,16 @@ class _DeploymentListOrContinueButton
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  if (myCustomGameSettings.gameMode == GameMode.computer &&
+                  final isPVCandBothPlayersReady =
+                      myCustomGameSettings.gameMode == GameMode.computer &&
                       myCustomGameSettings.players.length == 1 &&
-                      myCustomGameSettings.players[0].isReady) {
+                      myCustomGameSettings.players[0].isReady;
+                  final isPVPandBothPlayersReady =
+                      myCustomGameSettings.gameMode == GameMode.pvp &&
+                      myCustomGameSettings.players.length >= 2 &&
+                      myCustomGameSettings.players[0].isReady &&
+                      myCustomGameSettings.players[1].isReady;
+                  if (isPVCandBothPlayersReady) {
                     // both players are ready
                     // player vs computer
 
@@ -993,11 +1014,12 @@ class _DeploymentListOrContinueButton
                     // deploy computer player
                     // return PlayerDeployPage(customGameInformation, player2);
                     // if pvc and player is ready, set computer and push to game page
-
-                    if (myCustomGameSettings.gameMode == GameMode.computer &&
+                    final isGameReady =
+                        myCustomGameSettings.gameMode == GameMode.computer &&
                         myCustomGameSettings.players.length == 1 &&
                         myCustomGameSettings.players[0].isReady &&
-                        myCustomGameSettings.players[1].isReady) {
+                        myCustomGameSettings.players[1].isReady;
+                    if (isGameReady) {
                       // double check players and initiate the game
                       return GamePage(
                         myCustomGameSettings,
@@ -1010,10 +1032,7 @@ class _DeploymentListOrContinueButton
                     ); // just in case
 
                     // return GamePage(myCustomGameSettings);
-                  } else if (myCustomGameSettings.gameMode == GameMode.pvp &&
-                      myCustomGameSettings.players.length >= 2 &&
-                      myCustomGameSettings.players[0].isReady &&
-                      myCustomGameSettings.players[1].isReady) {
+                  } else if (isPVPandBothPlayersReady) {
                     // both players are ready
                     // player vs player
 
