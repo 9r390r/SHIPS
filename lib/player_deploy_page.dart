@@ -10,10 +10,10 @@ import 'custom_player_introduction.dart';
 import 'main.dart';
 
 class PlayerDeployPage extends StatefulWidget {
-  final GameSetup gameSetup;
+  final PreGameManager preGameManager;
   final Player currentPlayer;
 
-  const PlayerDeployPage(this.gameSetup, this.currentPlayer, {super.key});
+  const PlayerDeployPage(this.preGameManager, this.currentPlayer, {super.key});
 
   @override
   State<PlayerDeployPage> createState() => _PlayerDeployPage();
@@ -123,6 +123,12 @@ List<int> shipsQuantiiesToDisplay = []; // how many ship of each type
 bool continueIsReady = false;
 bool deployError = false;
 bool _exitRequested = false;
+late bool isPVC;
+late bool isComputerDeployTurn;
+
+bool get coverComputerDeploy {
+  return isPVC && isComputerDeployTurn;
+}
 
 late Color playerColor;
 late IconData playerIcon;
@@ -183,7 +189,12 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
 
     mapTilesNotifier = ValueNotifier<List<MapTile>>(mapTiles);
 
-    mapside = widget.gameSetup.difficultyGameModeAndMapSettings.mapsize.toInt();
+    mapside =
+        widget.preGameManager.difficultyGameModeAndMapSettings.mapsize.toInt();
+    isPVC =
+        widget.preGameManager.difficultyGameModeAndMapSettings.gameMode ==
+        GameMode.computer;
+    isComputerDeployTurn = widget.currentPlayer.isComputer;
     currentPlayershipTypesToDeploy = widget.currentPlayer.shipTypes;
     currentPlayerShipsOriginal = widget.currentPlayer.ships;
 
@@ -593,7 +604,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
         availableTiles.add(tile);
       }
       widget.currentPlayer.shipTypes = calculateShipTypesLineupForPLayer(
-        mapsize: widget.gameSetup.difficultyGameModeAndMapSettings.mapsize,
+        mapsize: widget.preGameManager.difficultyGameModeAndMapSettings.mapsize,
         fraction: widget.currentPlayer.fraction!,
         playerID: widget.currentPlayer.playerID,
       );
@@ -714,7 +725,17 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
         }
       }
       widget.currentPlayer.isReady = true;
+      reverseBlockedTilesBackToWaterStatus();
     });
+  }
+
+  void reverseBlockedTilesBackToWaterStatus() {
+    for (MapTile tile in mapTiles) {
+      if (tile.status == TileStatus.blocked) {
+        tile.status = TileStatus.water;
+      }
+    }
+    // mapTilesNotifier.value = List.from(mapTiles); // triggers UI update
   }
 
   String displayShipsToDeploy(Ship ship) {
@@ -734,11 +755,17 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            'Deploy Your ${widget.currentPlayer.fraction!.name.display}',
+            coverComputerDeploy
+                ? ''
+                : 'Deploy Your ${widget.currentPlayer.fraction!.name.display}',
             style: TextStyle(color: Colors.black, fontSize: 24),
           ),
           backgroundColor: playerColor,
-          leading: Icon(playerIcon, color: Colors.black, size: 35),
+          leading: Icon(
+            coverComputerDeploy ? null : playerIcon,
+            color: Colors.black,
+            size: 35,
+          ),
           actions: [
             IconButton(
               icon: Icon(
@@ -779,120 +806,239 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
             ),
           ],
         ),
-        bottomNavigationBar: BottomAppBar(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              TextButton.icon(
-                onPressed: () => clearMapResetDeploy(),
-                icon: Icon(Icons.deselect_sharp),
-                label: Text('clear map'),
-                style: TextButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    side: BorderSide(width: 2, color: Colors.grey[300]!),
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () => autoDeploy(),
-                icon: Icon(Icons.auto_fix_high_outlined),
-                label: Text('auto deploy'),
-                style: TextButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    side: BorderSide(width: 2, color: Colors.grey[300]!),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        body: Column(
-          children: [
-            // debug display for players' avatars
-            // SizedBox(
-            //   height: 30,
-            //   width: 300,
-            //   child: ListView.builder(
-            //     itemCount: myCustomGameSettings.players.length,
-            //     scrollDirection: Axis.horizontal,
-            //     itemBuilder: (context, index) {
-            //       return Container(
-            //         height: 30,
-            //         width: 30,
-            //         color:
-            //             myCustomGameSettings.players[index].avatar.background,
-            //         child: Icon(
-            //           myCustomGameSettings.players[index].avatar.icon,
-            //         ),
-            //       );
-            //     },
-            //   ),
-            // ),
-            Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: SizedBox(
-                width: 400,
-                height: 400,
-                child: ValueListenableBuilder<List<MapTile>>(
-                  valueListenable: mapTilesNotifier,
-                  builder: (context, tiles, _) {
-                    return GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: mapside,
-                        crossAxisSpacing: 1,
-                        mainAxisSpacing: 1,
-                      ),
-                      itemCount: mapTiles.length,
-                      itemBuilder: (context, index) {
-                        final tile = mapTiles[index];
-                        return GestureDetector(
-                          onTap: () {
-                            MapTile clickedTile = indexToMaptile(index);
-                            gridTapPlaceShipTile(clickedTile);
-                          },
-                          child: AnimatedContainer(
-                            duration: Duration(milliseconds: 200),
-                            alignment: Alignment.center,
-                            color: getTileColor(tile.status),
-                            child: Column(
-                              children: [
-                                Text(
-                                  tile.alfaAdress, //A4, B2, C3....
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: tile.adresColor),
-                                ),
-                                // Text(
-                                //   tile.x.toString() + (':') + tile.y.toString(),
-                                //   textAlign: TextAlign.center,
-                                //   style: TextStyle(color: tile.adresColor),
-                                // ),
-                              ],
+        bottomNavigationBar:
+            coverComputerDeploy
+                ? null
+                : BottomAppBar(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => clearMapResetDeploy(),
+                        icon: Icon(Icons.deselect_sharp),
+                        label: Text('clear map'),
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            side: BorderSide(
+                              width: 2,
+                              color: Colors.grey[300]!,
                             ),
                           ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => autoDeploy(),
+                        icon: Icon(Icons.auto_fix_high_outlined),
+                        label: Text('auto deploy'),
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            side: BorderSide(
+                              width: 2,
+                              color: Colors.grey[300]!,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                // debug display for players' avatars
+                // SizedBox(
+                //   height: 30,
+                //   width: 300,
+                //   child: ListView.builder(
+                //     itemCount: myCustomGameSettings.players.length,
+                //     scrollDirection: Axis.horizontal,
+                //     itemBuilder: (context, index) {
+                //       return Container(
+                //         height: 30,
+                //         width: 30,
+                //         color:
+                //             myCustomGameSettings.players[index].avatar.background,
+                //         child: Icon(
+                //           myCustomGameSettings.players[index].avatar.icon,
+                //         ),
+                //       );
+                //     },
+                //   ),
+                // ),
+                Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: SizedBox(
+                    width: 400,
+                    height: 400,
+                    child: ValueListenableBuilder<List<MapTile>>(
+                      valueListenable: mapTilesNotifier,
+                      builder: (context, tiles, _) {
+                        return GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: mapside,
+                                crossAxisSpacing: 1,
+                                mainAxisSpacing: 1,
+                              ),
+                          itemCount: mapTiles.length,
+                          itemBuilder: (context, index) {
+                            final tile = mapTiles[index];
+                            return GestureDetector(
+                              onTap: () {
+                                MapTile clickedTile = indexToMaptile(index);
+                                gridTapPlaceShipTile(clickedTile);
+                              },
+                              child: AnimatedContainer(
+                                duration: Duration(milliseconds: 200),
+                                alignment: Alignment.center,
+                                color: getTileColor(tile.status),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      tile.alfaAdress, //A4, B2, C3....
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: tile.adresColor),
+                                    ),
+                                    // Text(
+                                    //   tile.x.toString() + (':') + tile.y.toString(),
+                                    //   textAlign: TextAlign.center,
+                                    //   style: TextStyle(color: tile.adresColor),
+                                    // ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
-                    );
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 10),
+                Text(
+                  n < currentPlayerShipsOriginal.length
+                      ? 'Your ships to deploy on the map:'
+                      : 'All ships ready!',
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 5),
+                DeploymentListOrContinueButton(
+                  currentPlayer: widget.currentPlayer,
+                  onContinue: () {
+                    autoDeploy();
                   },
                 ),
-              ),
+              ],
             ),
+            if (coverComputerDeploy)
+              Expanded(
+                child: Container(
+                  color: Colors.white,
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 50,
+                      ),
+                      child: Column(
+                        children: [
+                          SizedBox(height: 70),
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: widget.currentPlayer.avatar.background,
+                            ),
+                            child: Icon(
+                              widget.currentPlayer.avatar.icon,
+                              size: 50,
+                            ),
+                          ),
+                          SizedBox(height: 30),
+                          Text(
+                            widget.currentPlayer.playerName,
+                            style: TextStyle(
+                              fontSize: 60,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // Text(
+                          //   widget.currentPlayer.fraction!.name.display,
+                          //   style: TextStyle(fontSize: 13),
+                          // ),
+                          // fraction is not revealed in order not to give second player any advantage.
+                          // could be shown if enemy fraction is selected, otherwise 'random'
+                          SizedBox(height: 40),
+                          SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              autoDeploy();
+                              randomSelect();
+                              Player newCurrentHumanPlayer = Player(
+                                playerName: '',
+                                avatar: Avatar(
+                                  Icons.question_mark_rounded,
+                                  Colors.grey,
+                                ),
+                                fraction: null,
+                                shipTypes: [],
+                                ships: [],
+                                playerID: generatePlayerID(),
+                                isReady: false,
+                                totalHealth: 0,
+                                isComputer: false,
+                              );
+                              myCustomGameSettings.players.add(
+                                newCurrentHumanPlayer,
+                              );
+                              prepareMapToDeployNextPlayer();
 
-            SizedBox(height: 10),
-            Text(
-              n < currentPlayerShipsOriginal.length
-                  ? 'Your ships to deploy on the map:'
-                  : 'All ships ready!',
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 5),
-            DeploymentListOrContinueButton(
-              currentPlayer: widget.currentPlayer,
-              onContinue: () {
-                autoDeploy();
-              },
-            ),
+                              PreGameManager pregameManager = PreGameManager(
+                                myCustomGameSettings,
+                                newCurrentHumanPlayer,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return CustomPlayerIntroduction(
+                                      settings: pregameManager,
+                                      currentPlayer: newCurrentHumanPlayer,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                            label: Text(
+                              'confirm enemy',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            icon: Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
+                                side: BorderSide(
+                                  width: 2,
+                                  color: Colors.blueGrey,
+                                ),
+                              ),
+                              backgroundColor: Colors.blueGrey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -917,15 +1063,6 @@ class DeploymentListOrContinueButton extends StatefulWidget {
 
 class _DeploymentListOrContinueButton
     extends State<DeploymentListOrContinueButton> {
-  void reverseBlockedTilesBackToWaterStatus() {
-    for (MapTile tile in mapTiles) {
-      if (tile.status == TileStatus.blocked) {
-        tile.status = TileStatus.water;
-      }
-    }
-    mapTilesNotifier.value = List.from(mapTiles); // triggers UI update
-  }
-
   @override
   Widget build(BuildContext context) {
     if (n < currentPlayerShipsOriginal.length) {
@@ -976,77 +1113,39 @@ class _DeploymentListOrContinueButton
         ),
       );
     } else {
-      setState(() {
-        reverseBlockedTilesBackToWaterStatus();
-      });
       return Padding(
         padding: EdgeInsets.all(70),
         child: ElevatedButton.icon(
+          icon: Icon(Icons.check_rounded, color: Colors.white),
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+              side: BorderSide(width: 2, color: Colors.blueGrey),
+            ),
+            backgroundColor: Colors.blueGrey,
+          ),
+          label: Text(
+            'Save and continue!',
+            style: TextStyle(color: Colors.white),
+          ),
           onPressed: () {
             widget.currentPlayer.isReady = true;
-            // myCustomGameSettings.players.add(widget.currentPlayer);
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  final isPVCandBothPlayersReady =
-                      myCustomGameSettings.gameMode == GameMode.computer &&
-                      myCustomGameSettings.players.length == 1 &&
-                      myCustomGameSettings.players[0].isReady;
-                  final isPVPandBothPlayersReady =
-                      myCustomGameSettings.gameMode == GameMode.pvp &&
-                      myCustomGameSettings.players.length >= 2 &&
-                      myCustomGameSettings.players[0].isReady &&
-                      myCustomGameSettings.players[1].isReady;
-                  if (isPVCandBothPlayersReady) {
-                    // both players are ready
-                    // player vs computer
-
-                    prepareMapToDeployNextPlayer();
-                    // setUpComputerEnemy();
-                    widget.onContinue();
-
-                    // GameSetup customGameInformation = GameSetup(
-                    //   myCustomGameSettings,
-                    //   player2,
-                    // );
-
-                    // deploy computer player
-                    // return PlayerDeployPage(customGameInformation, player2);
-                    // if pvc and player is ready, set computer and push to game page
-                    final isGameReady =
-                        myCustomGameSettings.gameMode == GameMode.computer &&
-                        myCustomGameSettings.players.length == 1 &&
+                  if (myCustomGameSettings.gameMode == GameMode.computer) {
+                    final bothPlayersReady =
                         myCustomGameSettings.players[0].isReady &&
                         myCustomGameSettings.players[1].isReady;
-                    if (isGameReady) {
-                      // double check players and initiate the game
+                    if (bothPlayersReady) {
                       return GamePage(
                         myCustomGameSettings,
                         myCustomGameSettings.players[0],
                         myCustomGameSettings.players[1],
                       );
-                    }
-                    return MyHomePage(
-                      title: 'error 2 players?',
-                    ); // just in case
-
-                    // return GamePage(myCustomGameSettings);
-                  } else if (isPVPandBothPlayersReady) {
-                    // both players are ready
-                    // player vs player
-
-                    return GamePage(
-                      myCustomGameSettings,
-                      myCustomGameSettings.players[0],
-                      myCustomGameSettings.players[1],
-                    );
-                  } else {
-                    // game does not have two ready players
-
-                    // Only add a new player if there are fewer than 2
-                    if (myCustomGameSettings.players.length < 2) {
-                      Player nweCurrentPlayer = Player(
+                    } else {
+                      Player newCurrentHumanPlayer = Player(
                         playerName: '',
                         avatar: Avatar(
                           Icons.question_mark_rounded,
@@ -1058,35 +1157,112 @@ class _DeploymentListOrContinueButton
                         playerID: generatePlayerID(),
                         isReady: false,
                         totalHealth: 0,
+                        isComputer: false,
                       );
-                      myCustomGameSettings.players.add(nweCurrentPlayer);
+                      myCustomGameSettings.players.add(newCurrentHumanPlayer);
                       prepareMapToDeployNextPlayer();
 
+                      PreGameManager pregameManager = PreGameManager(
+                        myCustomGameSettings,
+                        newCurrentHumanPlayer,
+                      );
                       return CustomPlayerIntroduction(
-                        settings: myCustomGameSettings,
-                        currentPlayer: nweCurrentPlayer,
+                        settings: pregameManager,
+                        currentPlayer: newCurrentHumanPlayer,
+                      );
+                    }
+                  } else if (myCustomGameSettings.gameMode == GameMode.pvp) {
+                    if (myCustomGameSettings.players.length < 2) {
+                      Player newCurrentHumanPlayer = Player(
+                        playerName: '',
+                        avatar: Avatar(
+                          Icons.question_mark_rounded,
+                          Colors.grey,
+                        ),
+                        fraction: null,
+                        shipTypes: [],
+                        ships: [],
+                        playerID: generatePlayerID(),
+                        isReady: false,
+                        totalHealth: 0,
+                        isComputer: false,
+                      );
+                      myCustomGameSettings.players.add(newCurrentHumanPlayer);
+                      prepareMapToDeployNextPlayer();
+
+                      PreGameManager pregameManager = PreGameManager(
+                        myCustomGameSettings,
+                        newCurrentHumanPlayer,
+                      );
+                      return CustomPlayerIntroduction(
+                        settings: pregameManager,
+                        currentPlayer: newCurrentHumanPlayer,
+                      );
+                    }
+                    final bothPlayersReady =
+                        myCustomGameSettings.players[0].isReady &&
+                        myCustomGameSettings.players[1].isReady;
+                    if (bothPlayersReady) {
+                      return GamePage(
+                        myCustomGameSettings,
+                        myCustomGameSettings.players[0],
+                        myCustomGameSettings.players[1],
                       );
                     } else {
-                      // If 2 players already exist, just go to GamePage or error
-                      return MyHomePage(title: 'error?');
+                      Player newCurrentHumanPlayer = Player(
+                        playerName: '',
+                        avatar: Avatar(
+                          Icons.question_mark_rounded,
+                          Colors.grey,
+                        ),
+                        fraction: null,
+                        shipTypes: [],
+                        ships: [],
+                        playerID: generatePlayerID(),
+                        isReady: false,
+                        totalHealth: 0,
+                        isComputer: false,
+                      );
+                      myCustomGameSettings.players.add(newCurrentHumanPlayer);
+                      prepareMapToDeployNextPlayer();
+
+                      PreGameManager pregameManager = PreGameManager(
+                        myCustomGameSettings,
+                        newCurrentHumanPlayer,
+                      );
+                      return CustomPlayerIntroduction(
+                        settings: pregameManager,
+                        currentPlayer: newCurrentHumanPlayer,
+                      );
                     }
+                  } else {
+                    return PopScope(
+                      canPop: false,
+                      child: Scaffold(
+                        body: Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                "Game loading error!",
+                                style: TextStyle(fontSize: 19),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  exitGame();
+                                },
+                                icon: Icon(Icons.do_disturb),
+                              ),
+                              Text('try again'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
                   }
                 },
               ),
             );
           },
-          label: Text(
-            'Save and continue!',
-            style: TextStyle(color: Colors.white),
-          ),
-          icon: Icon(Icons.check_rounded, color: Colors.white),
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(5),
-              side: BorderSide(width: 2, color: Colors.blueGrey),
-            ),
-            backgroundColor: Colors.blueGrey,
-          ),
         ),
       );
     }

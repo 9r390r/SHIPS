@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'custom_player_introduction.dart';
+import 'player_deploy_page.dart';
 
 class GameSetupPage extends StatefulWidget {
   const GameSetupPage({super.key});
@@ -64,17 +65,6 @@ class _GameSetupPageState extends State<GameSetupPage> {
 
     return gamemodeLabel;
   }
-
-  // void setDifficulty(String difficuty) {
-  //   if (difficuty == 'easy') {
-  //     myCustomGameSettings.computerDifficulty = ComputerDifficulty.easy;
-  //   } else if (difficuty == 'normal') {
-  //     myCustomGameSettings.computerDifficulty = ComputerDifficulty.normal;
-  //   } else if (difficuty == 'hard') {
-  //     myCustomGameSettings.computerDifficulty = ComputerDifficulty.hard;
-  //   }
-  //   setState(() {});
-  // }
 
   String getDifficultyLabel() {
     String difficutyLabel = '';
@@ -445,13 +435,23 @@ class _GameSetupPageState extends State<GameSetupPage> {
                               playerID: computerID,
                               isReady: false,
                               totalHealth: 0,
+                              isComputer: true,
                             );
-                            return CustomPlayerIntroduction(
-                              currentPlayer: computerPlayer,
-                              settings: myCustomGameSettings,
+                            computerPlayer.ships = expandToIndividualShips(
+                              computerPlayer.shipTypes,
+                            );
+                            myCustomGameSettings.players.add(computerPlayer);
+                            PreGameManager pregameManager = PreGameManager(
+                              myCustomGameSettings,
+                              computerPlayer,
+                            );
+
+                            return PlayerDeployPage(
+                              pregameManager,
+                              computerPlayer,
                             );
                           } else {
-                            Player currentPlayer = Player(
+                            Player currentHumanPlayer = Player(
                               playerName: '',
                               avatar: Avatar(
                                 Icons.question_mark_rounded,
@@ -463,14 +463,21 @@ class _GameSetupPageState extends State<GameSetupPage> {
                               playerID: generatePlayerID(),
                               isReady: false,
                               totalHealth: 0,
+                              isComputer: false,
                             );
-                            myCustomGameSettings.players.add(currentPlayer);
+                            myCustomGameSettings.players.add(
+                              currentHumanPlayer,
+                            );
                             print(
                               'players in my custom game: ${myCustomGameSettings.players}',
                             );
+                            PreGameManager pregameManager = PreGameManager(
+                              myCustomGameSettings,
+                              currentHumanPlayer,
+                            );
                             return CustomPlayerIntroduction(
-                              currentPlayer: currentPlayer,
-                              settings: myCustomGameSettings,
+                              currentPlayer: currentHumanPlayer,
+                              settings: pregameManager,
                             );
                           }
                         },

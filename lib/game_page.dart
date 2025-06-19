@@ -28,6 +28,10 @@ bool _showPlayerCard = true;
 String message = '';
 
 void exitGame() {
+  isWinner = false;
+  message = '';
+  _allowAction = true;
+
   mapTiles.clear();
   _exitRequested = false;
   greenTiles.clear();
@@ -529,13 +533,6 @@ class _GamePageState extends State<GamePage> {
                                                 ),
                                           ),
                                         ),
-                                        //   Text(
-                                        //     tile.x.toString() +
-                                        //         (':') +
-                                        //         tile.y.toString(),
-                                        //     textAlign: TextAlign.center,
-                                        //     style: TextStyle(color: tile.adresColor),
-                                        //   ),
                                       ],
                                     ),
                                   ),
@@ -577,13 +574,6 @@ class _GamePageState extends State<GamePage> {
                                         //   children: [
                                         //     Text(
                                         //       tile.alfaAdress, //A4, B2, C3....
-                                        //       textAlign: TextAlign.center,
-                                        //       style: TextStyle(color: tile.adresColor),
-                                        //     ),
-                                        //     Text(
-                                        //       tile.x.toString() +
-                                        //           (':') +
-                                        //           tile.y.toString(),
                                         //       textAlign: TextAlign.center,
                                         //       style: TextStyle(color: tile.adresColor),
                                         //     ),

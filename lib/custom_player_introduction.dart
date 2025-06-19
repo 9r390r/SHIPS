@@ -6,7 +6,7 @@ import 'custom_game_settings.dart';
 import 'main.dart';
 
 class CustomPlayerIntroduction extends StatefulWidget {
-  final GameSettings settings;
+  final PreGameManager settings;
   final Player currentPlayer;
 
   const CustomPlayerIntroduction({
@@ -259,6 +259,7 @@ class Player {
   bool isReady = false;
   late int totalHealth;
   late int currentHealth;
+  bool isComputer;
 
   Player({
     required this.playerName,
@@ -269,6 +270,7 @@ class Player {
     required this.playerID,
     required this.isReady,
     required this.totalHealth,
+    required this.isComputer,
   });
 
   List<Ship> copyShipSetup() {
@@ -297,13 +299,13 @@ void displayShipTypes(
   print('===================================');
 }
 
-class GameSetup {
+class PreGameManager {
   // export class to transition to the next page (player1_deploy) and further to player2 introduction to store player2 information
   GameSettings difficultyGameModeAndMapSettings;
-  Player player1;
+  Player? player1;
   Player? player2; // this will store the second player later when it's ready
 
-  GameSetup(this.difficultyGameModeAndMapSettings, this.player1);
+  PreGameManager(this.difficultyGameModeAndMapSettings, this.player1);
 }
 
 // Player setUpComputerEnemy() {
@@ -439,13 +441,14 @@ void selectPlayerAvaterIcons() {
 List<IconData?> playerAvatarIconList = [
   Icons.pest_control_rodent_rounded,
   Icons.support_sharp,
-  Icons.kayaking_rounded,
+  Icons.pets,
   Icons.anchor_rounded,
   Icons.houseboat_rounded,
 ];
 
 List<IconData?> allIcons = [
   Icons.sports_bar_outlined,
+  Icons.pets,
   Icons.bathtub_outlined,
   Icons.directions_boat_sharp,
   Icons.anchor_rounded,
@@ -473,13 +476,13 @@ Fraction randomFraction() {
   return fractions.values.toList()[index];
 }
 
-GameSetup savedGameSettingsWithPlayers() {
-  GameSetup customGameInformation = GameSetup(
-    myCustomGameSettings,
-    myCustomGameSettings.players.last,
-  );
-  return customGameInformation;
-}
+// GameSetup savedGameSettingsWithPlayers() {
+//   GameSetup customGameInformation = GameSetup(
+//     myCustomGameSettings,
+//     myCustomGameSettings.players.last,
+//   );
+//   return customGameInformation;
+// }
 
 class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
   bool fractioniIsChosen = false;
@@ -526,24 +529,6 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
     });
     return selectedColor;
   }
-
-  // String fractionDescription(String fraction) {
-  //   String description = '';
-
-  //   setState(() {
-  //     if (fraction == 'Navy') {
-  //       description =
-  //           "Navy deploys fewer but very powerful ships\nthat are more difficult to sink.\n(Heavy and powerful but easy to target)";
-  //     } else if (fraction == 'Pirates') {
-  //       description =
-  //           "Pirates, me lad, we don't play fair.\nWe be strikin' from shadows, arr.\n(Scattered and stealthy but fragile)";
-  //     } else if (fraction == 'Federation') {
-  //       description =
-  //           "Balanced and versatile.\nThe Federation adapts to any mission.\n(Standard, balanced lineup)";
-  //     }
-  //   });
-  //   return description;
-  // }
 
   void exitGame() {
     // clearMapResetDeploy();
@@ -837,8 +822,9 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
                     context,
                     MaterialPageRoute(
                       builder: (context) {
-                        final settings = savedGameSettingsWithPlayers();
-                        return PlayerDeployPage(settings, settings.player1);
+                        // final settings = savedGameSettingsWithPlayers();
+                        final settings = widget.settings;
+                        return PlayerDeployPage(settings, settings.player1!);
                       },
                     ),
                   );
