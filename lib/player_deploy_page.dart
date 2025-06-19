@@ -635,7 +635,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
     idbase = 1;
 
     mapside = 4;
-    myCustomGameSettings.computerDifficulty = 0;
+    myCustomGameSettings.computerDifficulty = ComputerDifficulty.notSet;
     myCustomGameSettings.gameMode = GameMode.notSet;
     myCustomGameSettings.mapsize = 4.0;
 
@@ -1003,7 +1003,7 @@ class _DeploymentListOrContinueButton
                     // player vs computer
 
                     prepareMapToDeployNextPlayer();
-                    setUpComputerEnemy();
+                    // setUpComputerEnemy();
                     widget.onContinue();
 
                     // GameSetup customGameInformation = GameSetup(

@@ -126,8 +126,8 @@ Fraction navyFraction = Fraction(
   description:
       "The Navy goes all-in with their armoured ships\ncovering vast areas of the sea.\n(Easier to detect but most durable)",
   shipSizeChanceConfig: {
-    ShipSize.size1: 0.1,
-    ShipSize.size2: 0.2,
+    ShipSize.size1: 0.08,
+    ShipSize.size2: 0.12,
     ShipSize.size3: 0.4,
     ShipSize.size4: 0.3,
     ShipSize.size5: 0.0,
@@ -306,47 +306,47 @@ class GameSetup {
   GameSetup(this.difficultyGameModeAndMapSettings, this.player1);
 }
 
-Player setUpComputerEnemy() {
-  int newID = generatePlayerID();
-  late Player computerPlayer = Player(
-    playerName: '',
-    avatar: Avatar(Icons.smart_toy_outlined, getComputerAvatarRandomColor()),
-    fraction: randomFraction(),
-    shipTypes: [],
-    ships: [],
-    playerID: newID,
-    isReady: false,
-    totalHealth: 0,
-  );
-  if (myCustomGameSettings.gameMode == GameMode.computer) {
-    Fraction chosenRandomFraction = randomFraction();
+// Player setUpComputerEnemy() {
+//   int newID = generatePlayerID();
+//   late Player computerPlayer = Player(
+//     playerName: '',
+//     avatar: Avatar(Icons.smart_toy_outlined, getComputerAvatarRandomColor()),
+//     fraction: randomFraction(),
+//     shipTypes: [],
+//     ships: [],
+//     playerID: newID,
+//     isReady: false,
+//     totalHealth: 0,
+//   );
+//   if (myCustomGameSettings.gameMode == GameMode.computer) {
+//     Fraction chosenRandomFraction = randomFraction();
 
-    computerPlayer = Player(
-      playerName: generateComputerName(),
-      avatar: Avatar(Icons.smart_toy_outlined, getComputerAvatarRandomColor()),
-      fraction: chosenRandomFraction,
-      shipTypes: calculateShipTypesLineupForPLayer(
-        mapsize: myCustomGameSettings.mapsize,
-        fraction: chosenRandomFraction,
-        playerID: newID,
-      ),
-      ships: [],
-      playerID: newID,
-      isReady: false,
-      totalHealth: 0,
-    );
-  }
-  // Diagnostic print function
-  print('');
-  print("==========================================================");
-  print("Auto set up of a Computer Enemy:");
-  print("Computer Name: ${computerPlayer.playerName}");
-  print("Computer Fraction: ${computerPlayer.fraction}");
-  print("==========================================================");
-  myCustomGameSettings.players.add(computerPlayer);
+//     computerPlayer = Player(
+//       playerName: generateComputerName(),
+//       avatar: Avatar(Icons.smart_toy_outlined, getComputerAvatarRandomColor()),
+//       fraction: chosenRandomFraction,
+//       shipTypes: calculateShipTypesLineupForPLayer(
+//         mapsize: myCustomGameSettings.mapsize,
+//         fraction: chosenRandomFraction,
+//         playerID: newID,
+//       ),
+//       ships: [],
+//       playerID: newID,
+//       isReady: false,
+//       totalHealth: 0,
+//     );
+//   }
+//   // Diagnostic print function
+//   print('');
+//   print("==========================================================");
+//   print("Auto set up of a Computer Enemy:");
+//   print("Computer Name: ${computerPlayer.playerName}");
+//   print("Computer Fraction: ${computerPlayer.fraction}");
+//   print("==========================================================");
+//   myCustomGameSettings.players.add(computerPlayer);
 
-  return computerPlayer;
-}
+//   return computerPlayer;
+// }
 
 List<Ship> expandToIndividualShips(
   List<ShipTypeForPlayerAndFraction> playerShipTypeList,
@@ -554,7 +554,7 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
     idbase = 1;
 
     mapside = 4;
-    myCustomGameSettings.computerDifficulty = 0;
+    myCustomGameSettings.computerDifficulty = ComputerDifficulty.notSet;
     myCustomGameSettings.gameMode = GameMode.notSet;
     myCustomGameSettings.mapsize = 4.0;
 

@@ -34,7 +34,7 @@ void exitGame() {
   thisShipPlacedTiles = 0;
 
   mapside = 4;
-  myCustomGameSettings.computerDifficulty = 0;
+  myCustomGameSettings.computerDifficulty = ComputerDifficulty.notSet;
   myCustomGameSettings.gameMode = GameMode.notSet;
   myCustomGameSettings.mapsize = 4.0;
   idbase = 1;

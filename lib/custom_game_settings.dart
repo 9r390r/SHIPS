@@ -11,9 +11,11 @@ class GameSetupPage extends StatefulWidget {
 
 enum GameMode { notSet, pvp, computer }
 
+enum ComputerDifficulty { notSet, easy, normal, hard }
+
 class GameSettings {
   GameMode gameMode;
-  int computerDifficulty; // 0 = not stated, 1 = easy, 2 = normal, 3 = hard
+  ComputerDifficulty computerDifficulty;
   double mapsize;
   List<Player> players;
 
@@ -27,7 +29,7 @@ class GameSettings {
 
 GameSettings myCustomGameSettings = GameSettings(
   gameMode: GameMode.notSet,
-  computerDifficulty: 0,
+  computerDifficulty: ComputerDifficulty.notSet,
   mapsize: 4,
   players: [],
 );
@@ -35,15 +37,14 @@ GameSettings myCustomGameSettings = GameSettings(
 class _GameSetupPageState extends State<GameSetupPage> {
   bool ready =
       false; //is the game setup ready to go to the next page? => players introduction
-  // int gameMode = 0; // 0 = not-stated, 1 = PVP, 2 = VS computer
-  // int computerDifficulty = 0; // 0 = not stated, 1 = easy, 2 = normal, 3 = hard
 
   void setGameMode(GameMode gameMode) {
     if (gameMode == GameMode.pvp) {
       myCustomGameSettings.gameMode = GameMode.pvp;
     } else if (gameMode == GameMode.computer) {
       myCustomGameSettings.gameMode = GameMode.computer;
-      if (myCustomGameSettings.computerDifficulty == 0) {
+      if (myCustomGameSettings.computerDifficulty ==
+          ComputerDifficulty.notSet) {
         ready = false;
       }
     }
@@ -64,29 +65,32 @@ class _GameSetupPageState extends State<GameSetupPage> {
     return gamemodeLabel;
   }
 
-  void setDifficulty(String difficuty) {
-    if (difficuty == 'easy') {
-      myCustomGameSettings.computerDifficulty = 1;
-    } else if (difficuty == 'normal') {
-      myCustomGameSettings.computerDifficulty = 2;
-    } else if (difficuty == 'hard') {
-      myCustomGameSettings.computerDifficulty = 3;
-    }
-    setState(() {});
-  }
+  // void setDifficulty(String difficuty) {
+  //   if (difficuty == 'easy') {
+  //     myCustomGameSettings.computerDifficulty = ComputerDifficulty.easy;
+  //   } else if (difficuty == 'normal') {
+  //     myCustomGameSettings.computerDifficulty = ComputerDifficulty.normal;
+  //   } else if (difficuty == 'hard') {
+  //     myCustomGameSettings.computerDifficulty = ComputerDifficulty.hard;
+  //   }
+  //   setState(() {});
+  // }
 
   String getDifficultyLabel() {
     String difficutyLabel = '';
-    if (myCustomGameSettings.computerDifficulty == 0) {
+    if (myCustomGameSettings.computerDifficulty == ComputerDifficulty.notSet) {
       difficutyLabel = '';
-    } else if (myCustomGameSettings.computerDifficulty == 1) {
+    } else if (myCustomGameSettings.computerDifficulty ==
+        ComputerDifficulty.easy) {
       difficutyLabel = "Computer's moves are only random.";
       ready = true;
-    } else if (myCustomGameSettings.computerDifficulty == 2) {
+    } else if (myCustomGameSettings.computerDifficulty ==
+        ComputerDifficulty.normal) {
       difficutyLabel =
           'When found your ship, computer will prioritise destroying it \nbefore continuing to further scan the battlefield.';
       ready = true;
-    } else if (myCustomGameSettings.computerDifficulty == 3) {
+    } else if (myCustomGameSettings.computerDifficulty ==
+        ComputerDifficulty.hard) {
       difficutyLabel = 'More challenges to be introduced soon...';
       ready = false;
     }
@@ -97,11 +101,11 @@ class _GameSetupPageState extends State<GameSetupPage> {
   String mapSizeLabel = '';
 
   String getMapSizeLabel() {
-    if (myCustomGameSettings.mapsize < 6) {
+    if (myCustomGameSettings.mapsize < 5) {
       mapSizeLabel = 'SMALL';
-    } else if (myCustomGameSettings.mapsize < 8) {
+    } else if (myCustomGameSettings.mapsize < 7) {
       mapSizeLabel = 'MEDIUM';
-    } else if (myCustomGameSettings.mapsize < 11) {
+    } else if (myCustomGameSettings.mapsize < 10) {
       mapSizeLabel = 'LARGE';
     } else {
       mapSizeLabel = 'VERY LARGE';
@@ -130,25 +134,28 @@ class _GameSetupPageState extends State<GameSetupPage> {
       message = 'Choose game mode.';
       ready = false;
     } else if (myCustomGameSettings.gameMode == GameMode.pvp &&
-        myCustomGameSettings.computerDifficulty == 0) {
+        myCustomGameSettings.computerDifficulty == ComputerDifficulty.notSet) {
       //game mode PVP and computer difficulty not defined => ready
       message =
           'Confirm the map size ${myCustomGameSettings.mapsize.toInt()}x${myCustomGameSettings.mapsize.toInt()} ?';
       ready = true;
     } else if (myCustomGameSettings.gameMode == GameMode.computer &&
-        myCustomGameSettings.computerDifficulty == 0) {
+        myCustomGameSettings.computerDifficulty == ComputerDifficulty.notSet) {
       // game mode PVC and difficulty not defined => error
       message = 'Choose game difficulty.';
       ready = false;
     } else if ((myCustomGameSettings.gameMode == GameMode.pvp) ||
         (myCustomGameSettings.gameMode == GameMode.computer &&
-                myCustomGameSettings.computerDifficulty == 1 ||
-            myCustomGameSettings.computerDifficulty == 2)) {
+                myCustomGameSettings.computerDifficulty ==
+                    ComputerDifficulty.easy ||
+            myCustomGameSettings.computerDifficulty ==
+                ComputerDifficulty.normal)) {
       // game mode PVP or game mode PVC with specified difficulty => ready
       message =
           'Confirm the map size ${myCustomGameSettings.mapsize.toInt()}x${myCustomGameSettings.mapsize.toInt()} ?';
       ready = true;
-    } else if (myCustomGameSettings.computerDifficulty == 3) {
+    } else if (myCustomGameSettings.computerDifficulty ==
+        ComputerDifficulty.hard) {
       message = 'Hard difficulty not available yet. Select other option.';
       ready = false;
     }
@@ -238,7 +245,10 @@ class _GameSetupPageState extends State<GameSetupPage> {
 
                       children: [
                         ElevatedButton.icon(
-                          onPressed: () => setDifficulty('easy'),
+                          onPressed:
+                              () =>
+                                  myCustomGameSettings.computerDifficulty =
+                                      ComputerDifficulty.easy,
                           icon: Icon(
                             Icons.star_outline_rounded,
                             color: Colors.white,
@@ -253,20 +263,25 @@ class _GameSetupPageState extends State<GameSetupPage> {
                               side: BorderSide(
                                 width: 2,
                                 color:
-                                    myCustomGameSettings.computerDifficulty == 1
+                                    myCustomGameSettings.computerDifficulty ==
+                                            ComputerDifficulty.easy
                                         ? Colors.blue
                                         : Colors.blueGrey,
                               ),
                             ),
                             backgroundColor:
-                                myCustomGameSettings.computerDifficulty == 1
+                                myCustomGameSettings.computerDifficulty ==
+                                        ComputerDifficulty.easy
                                     ? Colors.blue[300]
                                     : Colors.blueGrey,
                           ),
                         ),
                         SizedBox(width: 20, height: 1),
                         ElevatedButton.icon(
-                          onPressed: () => setDifficulty('normal'),
+                          onPressed:
+                              () =>
+                                  myCustomGameSettings.computerDifficulty =
+                                      ComputerDifficulty.normal,
                           icon: Icon(
                             Icons.star_half_rounded,
                             color: Colors.white,
@@ -281,20 +296,25 @@ class _GameSetupPageState extends State<GameSetupPage> {
                               side: BorderSide(
                                 width: 2,
                                 color:
-                                    myCustomGameSettings.computerDifficulty == 2
+                                    myCustomGameSettings.computerDifficulty ==
+                                            ComputerDifficulty.normal
                                         ? Colors.blue
                                         : Colors.blueGrey,
                               ),
                             ),
                             backgroundColor:
-                                myCustomGameSettings.computerDifficulty == 2
+                                myCustomGameSettings.computerDifficulty ==
+                                        ComputerDifficulty.normal
                                     ? Colors.blue[300]
                                     : Colors.blueGrey,
                           ),
                         ),
                         SizedBox(width: 20, height: 1),
                         ElevatedButton.icon(
-                          onPressed: () => setDifficulty('hard'),
+                          onPressed:
+                              () =>
+                                  myCustomGameSettings.computerDifficulty =
+                                      ComputerDifficulty.hard,
                           icon: Icon(Icons.star_rounded, color: Colors.white),
                           label: Text(
                             'hard',
@@ -306,13 +326,15 @@ class _GameSetupPageState extends State<GameSetupPage> {
                               side: BorderSide(
                                 width: 2,
                                 color:
-                                    myCustomGameSettings.computerDifficulty == 3
+                                    myCustomGameSettings.computerDifficulty ==
+                                            ComputerDifficulty.hard
                                         ? Colors.red
                                         : Colors.blueGrey,
                               ),
                             ),
                             backgroundColor:
-                                myCustomGameSettings.computerDifficulty == 3
+                                myCustomGameSettings.computerDifficulty ==
+                                        ComputerDifficulty.hard
                                     ? Colors.red[300]
                                     : Colors.blueGrey,
                           ),
@@ -397,27 +419,54 @@ class _GameSetupPageState extends State<GameSetupPage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) {
-                          Player currentPlayer = Player(
-                            playerName: '',
-                            avatar: Avatar(
-                              Icons.question_mark_rounded,
-                              Colors.grey,
-                            ),
-                            fraction: null,
-                            shipTypes: [],
-                            ships: [],
-                            playerID: generatePlayerID(),
-                            isReady: false,
-                            totalHealth: 0,
-                          );
-                          myCustomGameSettings.players.add(currentPlayer);
-                          print(
-                            'players in my custom game: ${myCustomGameSettings.players}',
-                          );
-                          return CustomPlayerIntroduction(
-                            currentPlayer: currentPlayer,
-                            settings: myCustomGameSettings,
-                          );
+                          if (myCustomGameSettings.gameMode ==
+                              GameMode.computer) {
+                            Fraction chosenRandomFraction = randomFraction();
+                            int computerID = generatePlayerID();
+                            Player computerPlayer = Player(
+                              playerName: generateComputerName(),
+                              avatar: Avatar(
+                                Icons.smart_toy_outlined,
+                                getComputerAvatarRandomColor(),
+                              ),
+                              fraction: chosenRandomFraction,
+                              shipTypes: calculateShipTypesLineupForPLayer(
+                                mapsize: myCustomGameSettings.mapsize,
+                                fraction: chosenRandomFraction,
+                                playerID: computerID,
+                              ),
+                              ships: [],
+                              playerID: computerID,
+                              isReady: false,
+                              totalHealth: 0,
+                            );
+                            return CustomPlayerIntroduction(
+                              currentPlayer: computerPlayer,
+                              settings: myCustomGameSettings,
+                            );
+                          } else {
+                            Player currentPlayer = Player(
+                              playerName: '',
+                              avatar: Avatar(
+                                Icons.question_mark_rounded,
+                                Colors.grey,
+                              ),
+                              fraction: null,
+                              shipTypes: [],
+                              ships: [],
+                              playerID: generatePlayerID(),
+                              isReady: false,
+                              totalHealth: 0,
+                            );
+                            myCustomGameSettings.players.add(currentPlayer);
+                            print(
+                              'players in my custom game: ${myCustomGameSettings.players}',
+                            );
+                            return CustomPlayerIntroduction(
+                              currentPlayer: currentPlayer,
+                              settings: myCustomGameSettings,
+                            );
+                          }
                         },
                       ),
                     );
