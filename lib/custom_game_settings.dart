@@ -245,10 +245,12 @@ class _GameSetupPageState extends State<GameSetupPage> {
 
                       children: [
                         ElevatedButton.icon(
-                          onPressed:
-                              () =>
-                                  myCustomGameSettings.computerDifficulty =
-                                      ComputerDifficulty.easy,
+                          onPressed: () {
+                            setState(() {
+                              myCustomGameSettings.computerDifficulty =
+                                  ComputerDifficulty.easy;
+                            });
+                          },
                           icon: Icon(
                             Icons.star_outline_rounded,
                             color: Colors.white,
@@ -278,10 +280,12 @@ class _GameSetupPageState extends State<GameSetupPage> {
                         ),
                         SizedBox(width: 20, height: 1),
                         ElevatedButton.icon(
-                          onPressed:
-                              () =>
-                                  myCustomGameSettings.computerDifficulty =
-                                      ComputerDifficulty.normal,
+                          onPressed: () {
+                            setState(() {
+                              myCustomGameSettings.computerDifficulty =
+                                  ComputerDifficulty.normal;
+                            });
+                          },
                           icon: Icon(
                             Icons.star_half_rounded,
                             color: Colors.white,
@@ -311,10 +315,12 @@ class _GameSetupPageState extends State<GameSetupPage> {
                         ),
                         SizedBox(width: 20, height: 1),
                         ElevatedButton.icon(
-                          onPressed:
-                              () =>
-                                  myCustomGameSettings.computerDifficulty =
-                                      ComputerDifficulty.hard,
+                          onPressed: () {
+                            setState(() {
+                              myCustomGameSettings.computerDifficulty =
+                                  ComputerDifficulty.hard;
+                            });
+                          },
                           icon: Icon(Icons.star_rounded, color: Colors.white),
                           label: Text(
                             'hard',
