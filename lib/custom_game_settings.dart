@@ -67,25 +67,25 @@ class _GameSetupPageState extends State<GameSetupPage> {
   }
 
   String getDifficultyLabel() {
-    String difficutyLabel = '';
+    String difficultyLabel = '';
     if (myCustomGameSettings.computerDifficulty == ComputerDifficulty.notSet) {
-      difficutyLabel = '';
+      difficultyLabel = '';
     } else if (myCustomGameSettings.computerDifficulty ==
         ComputerDifficulty.easy) {
-      difficutyLabel = "Computer's moves are only random.";
+      difficultyLabel = "Computer's moves are only random.";
       ready = true;
     } else if (myCustomGameSettings.computerDifficulty ==
         ComputerDifficulty.normal) {
-      difficutyLabel =
+      difficultyLabel =
           'When found your ship, computer will prioritise destroying it \nbefore continuing to further scan the battlefield.';
       ready = true;
     } else if (myCustomGameSettings.computerDifficulty ==
         ComputerDifficulty.hard) {
-      difficutyLabel = 'More challenges to be introduced soon...';
+      difficultyLabel = 'More challenges to be introduced soon...';
       ready = false;
     }
     setState(() {});
-    return difficutyLabel;
+    return difficultyLabel;
   }
 
   String mapSizeLabel = '';

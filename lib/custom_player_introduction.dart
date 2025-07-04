@@ -207,10 +207,10 @@ List<ShipTypeForPlayerAndFraction> calculateShipTypesLineupForPLayer({
 }) {
   List<ShipTypeForPlayerAndFraction> lineup = [];
 
-  final reversedShipSizes = ShipSize.values.reversed;
+  final shipSizesDescending = ShipSize.values.reversed;
   double coverageModifier = 0.8;
 
-  for (ShipSize currentShipSize in reversedShipSizes) {
+  for (ShipSize currentShipSize in shipSizesDescending) {
     double thisShipSizeQuantity =
         fraction.shipSizeChanceConfig[currentShipSize]!;
     int thisShipQuantity =

@@ -27,6 +27,7 @@ enum TileStatus {
   allowed, // you can make action here (green)
   blocked, // you can not make action here (red)
   destroyed, // for marking hit tiles, ?calculating
+  target, // for showing enemy targets on player's native map, if they are missed (lighter red)
   sand, // for later implementations (yellow)
   grass, // for later implementations (green)
 }
@@ -42,6 +43,7 @@ Color getCoordinateContrastingColor(TileStatus status) {
     case TileStatus.blocked:
     case TileStatus.sand:
     case TileStatus.water:
+    case TileStatus.target:
       return Colors.black;
 
     default:
@@ -63,6 +65,8 @@ Color getTileColor(TileStatus status) {
   } else if (status == TileStatus.destroyed) {
     // return Colors.red[900]!;
     return Colors.deepOrangeAccent[700]!;
+  } else if (status == TileStatus.target) {
+    return Colors.red[300]!;
   } else if (status == TileStatus.sand) {
     return Colors.amber[400]!;
   } else {
