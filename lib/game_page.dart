@@ -177,8 +177,27 @@ void uncoverNeighbourTiles(GameManager gameManager, Ship targetShip) {
   }
 }
 
+void markEnemyStrikesOnNativeMap(
+  GameManager gameManager,
+  MapTile targetTile,
+  bool isHit,
+) {
+  for (MapTile enemyNativeMapTile in gameManager.enemyPlayer.nativeTiles) {
+    if (enemyNativeMapTile.x == targetTile.x &&
+        enemyNativeMapTile.y == targetTile.y) {
+      if (isHit) {
+        enemyNativeMapTile.status = TileStatus.destroyed;
+        break;
+      } else {
+        enemyNativeMapTile.status = TileStatus.target;
+        break;
+      }
+    }
+  }
+}
+
 void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
-  bool hit = false;
+  bool isHit = false;
   _exitRequested = false;
   if (!isWinner) {
     if (targetTile.isExplored == false) {
@@ -192,7 +211,7 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
               enemyShip.health--;
               gameManager.enemyPlayer.player.currentHealth--;
               targetTile.isExplored = true;
-              hit = true;
+              isHit = true;
               message = 'Hit enemy ship at ${targetTile.alfaAdress} !';
               // directly display that the ship was already destroyed, uncover neighbouring tiles to clear up the map
               Ship? clickedShip = identifyEnemyShipByTile(
@@ -210,11 +229,13 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
               targetTile.isExplored = true;
             }
           }
-          if (hit) {
+          if (isHit) {
             break;
           }
           message = 'Miss...';
         }
+        markEnemyStrikesOnNativeMap(gameManager, targetTile, isHit);
+        // preview of targets selected by enemy on player's native map. if hit status marked as Destroyed (dark red), else marked as target (bright red)
       } else {
         message = "That is all you could do. End your turn?";
       }
@@ -266,9 +287,14 @@ class PlayerState {
 class GameManager {
   late PlayerState playerA;
   late PlayerState playerB;
+  late GameSettings gameSettings;
   int currentTurn = 1;
 
-  GameManager({required this.playerA, required this.playerB});
+  GameManager({
+    required this.playerA,
+    required this.playerB,
+    required this.gameSettings,
+  });
 
   PlayerState get currentPlayer => currentTurn % 2 == 0 ? playerA : playerB;
   PlayerState get enemyPlayer => currentTurn % 2 == 0 ? playerB : playerA;
@@ -289,11 +315,14 @@ class _GamePageState extends State<GamePage> {
       // iterating over player's ships
       for (MapTile shipTile in ship.locations) {
         // iterating over these ships' locations
-
         MapTile matchingTile = currentNativePlayerState.nativeTiles.firstWhere(
           (tile) => tile.x == shipTile.x && tile.y == shipTile.y,
         );
-        matchingTile.status = TileStatus.ship;
+        if (matchingTile.status == TileStatus.destroyed) {
+          matchingTile.status = TileStatus.destroyed;
+        } else {
+          matchingTile.status = TileStatus.ship;
+        }
       }
     }
   }
@@ -323,7 +352,11 @@ class _GamePageState extends State<GamePage> {
     playerstate2.initializeNativeTiles();
     playerstate2.initializeEnemyTiles();
 
-    gameManager = GameManager(playerA: playerstate1, playerB: playerstate2);
+    gameManager = GameManager(
+      playerA: playerstate1,
+      playerB: playerstate2,
+      gameSettings: widget.gameSettings,
+    );
 
     markPlayerNativeMapTilesOnNativeList(gameManager.currentPlayer);
 
@@ -489,16 +522,17 @@ class _GamePageState extends State<GamePage> {
                           child: SizedBox(
                             width: 400,
                             height: 400,
+                            ////////////////////////////////////////////////////////////// main playable map
                             child: GridView.builder(
                               itemCount: mapside * mapside,
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: mapside,
-                                    crossAxisSpacing: 1,
-                                    mainAxisSpacing: 1,
+                                    crossAxisSpacing: 0,
+                                    mainAxisSpacing: 0,
                                   ),
                               itemBuilder: (context, index) {
-                                final MapTile enemyFieldTile =
+                                MapTile enemyFieldTile =
                                     gameManager.currentPlayer.enemyTiles[index];
                                 return GestureDetector(
                                   onTap: () {
@@ -546,42 +580,98 @@ class _GamePageState extends State<GamePage> {
                           padding: const EdgeInsets.all(5.0),
                           child: Row(
                             children: [
-                              SizedBox(
-                                height: 90,
-                                width: 90,
-                                child: GridView.builder(
-                                  itemCount: mapside * mapside,
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: mapside,
-                                        crossAxisSpacing: 1,
-                                        mainAxisSpacing: 1,
-                                      ),
-                                  itemBuilder: (context, index) {
-                                    final MapTile nativeTile =
-                                        gameManager
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _exitRequested = false;
+                                    if (gameManager
                                             .currentPlayer
-                                            .nativeTiles[index];
-                                    return GestureDetector(
-                                      onTap: () {
-                                        // MapTile clickedTile = indexToMaptile(index);
-                                        // gridTapPlaceShipTile(clickedTile);
-                                      },
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        color: getTileColor(nativeTile.status),
-                                        // child: Column(
-                                        //   children: [
-                                        //     Text(
-                                        //       tile.alfaAdress, //A4, B2, C3....
-                                        //       textAlign: TextAlign.center,
-                                        //       style: TextStyle(color: tile.adresColor),
-                                        //     ),
-                                        //   ],
-                                        // ),
-                                      ),
-                                    );
-                                  },
+                                            .player
+                                            .hideNativeMap ==
+                                        true) {
+                                      gameManager
+                                          .currentPlayer
+                                          .player
+                                          .hideNativeMap = false;
+                                    } else {
+                                      gameManager
+                                          .currentPlayer
+                                          .player
+                                          .hideNativeMap = true;
+                                    }
+                                  });
+                                },
+                                child: SizedBox(
+                                  height: 150,
+                                  width: 150,
+                                  ////////////////////////////////////////////////////////////// player's native map
+                                  child:
+                                      (gameManager
+                                              .currentPlayer
+                                              .player
+                                              .hideNativeMap)
+                                          ? Container(
+                                            color: Colors.blueGrey,
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Text(
+                                                  '?',
+                                                  style: TextStyle(
+                                                    color:
+                                                        Colors
+                                                            .blueGrey
+                                                            .shade400,
+                                                    fontSize: 130,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  'toggle map visibility',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                          : GridView.builder(
+                                            itemCount: mapside * mapside,
+                                            gridDelegate:
+                                                SliverGridDelegateWithFixedCrossAxisCount(
+                                                  crossAxisCount: mapside,
+                                                  crossAxisSpacing: 0,
+                                                  mainAxisSpacing: 0,
+                                                ),
+                                            itemBuilder: (context, index) {
+                                              MapTile nativeTile =
+                                                  gameManager
+                                                      .currentPlayer
+                                                      .nativeTiles[index];
+                                              return AnimatedContainer(
+                                                duration: Duration(
+                                                  milliseconds: 350,
+                                                ),
+                                                alignment: Alignment.center,
+                                                color: getTileColor(
+                                                  nativeTile.status,
+                                                ),
+                                                // child: Column(
+                                                //   children: [
+                                                //     Text(
+                                                //       nativeTile
+                                                //           .alfaAdress, //A4, B2, C3....
+                                                //       textAlign: TextAlign.center,
+                                                //       style: TextStyle(
+                                                //         color: nativeTile.adresColor,
+                                                //       ),
+                                                //     ),
+                                                //   ],
+                                                // ),
+                                              );
+                                            },
+                                          ),
                                 ),
                               ),
                               SizedBox(width: 10),
@@ -591,7 +681,7 @@ class _GamePageState extends State<GamePage> {
                                 child: Column(
                                   children: [
                                     Row(
-                                      spacing: 10,
+                                      spacing: 30,
 
                                       children: [
                                         Text(
@@ -621,7 +711,7 @@ class _GamePageState extends State<GamePage> {
                                       ],
                                     ),
                                     Row(
-                                      spacing: 10,
+                                      spacing: 30,
                                       children: [
                                         Text(
                                           gameManager

@@ -64,7 +64,7 @@ Color getTileColor(TileStatus status) {
     return Colors.redAccent[400]!;
   } else if (status == TileStatus.destroyed) {
     // return Colors.red[900]!;
-    return Colors.deepOrangeAccent[700]!;
+    return Colors.red[900]!;
   } else if (status == TileStatus.target) {
     return Colors.red[300]!;
   } else if (status == TileStatus.sand) {

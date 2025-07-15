@@ -260,6 +260,7 @@ class Player {
   late int totalHealth;
   late int currentHealth;
   bool isComputer;
+  bool hideNativeMap = false;
 
   Player({
     required this.playerName,
