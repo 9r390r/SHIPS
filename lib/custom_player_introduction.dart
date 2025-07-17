@@ -567,7 +567,7 @@ class _CustomPlayerIntroduction extends State<CustomPlayerIntroduction> {
           actions: [
             IconButton(
               icon: Icon(
-                Icons.do_disturb,
+                Icons.exit_to_app_rounded,
                 color: _exitRequested ? Colors.black : Colors.black12,
                 size: 35,
               ),

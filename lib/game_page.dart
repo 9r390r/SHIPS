@@ -1,3 +1,4 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 
@@ -196,7 +197,11 @@ void markEnemyStrikesOnNativeMap(
   }
 }
 
-void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
+void shotEnemyTile(
+  GameManager gameManager,
+  MapTile targetTile,
+  GameEventTracker gameEventTracker,
+) {
   bool isHit = false;
   _exitRequested = false;
   if (!isWinner) {
@@ -212,6 +217,16 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
               gameManager.enemyPlayer.player.currentHealth--;
               targetTile.isExplored = true;
               isHit = true;
+              if (!gameEventTracker.isFirstHit) {
+                gameEventTracker.gameEvents.add(
+                  GameEvent(
+                    gameEventType: GameEventType.firstHit,
+                    playerName: gameManager.currentPlayer.player.playerName,
+                    round: gameManager.currentTurn,
+                  ),
+                );
+                gameEventTracker.isFirstHit = true;
+              }
               message = 'Hit enemy ship at ${targetTile.alfaAdress} !';
               // directly display that the ship was already destroyed, uncover neighbouring tiles to clear up the map
               Ship? clickedShip = identifyEnemyShipByTile(
@@ -221,6 +236,16 @@ void shotEnemyTile(GameManager gameManager, MapTile targetTile) {
               if (clickedShip!.health == 0) {
                 message = "Enemy ship '${clickedShip.shipName}' was sunk!";
                 uncoverNeighbourTiles(gameManager, clickedShip);
+                if (!gameEventTracker.isFirstSunk) {
+                  gameEventTracker.gameEvents.add(
+                    GameEvent(
+                      gameEventType: GameEventType.firstSunk,
+                      playerName: gameManager.currentPlayer.player.playerName,
+                      round: gameManager.currentTurn,
+                    ),
+                  );
+                  gameEventTracker.isFirstSunk = true;
+                }
               }
 
               break;
@@ -304,8 +329,49 @@ class GameManager {
   }
 }
 
+class UncoveredTiles {
+  late final int totalUncoveredTiles;
+  late final String playerName;
+}
+
+class HitPercentage {
+  late final double hitPercentage;
+  late final String playerName;
+}
+
+class LongestHitStreak {
+  Map<String, int> hitStreakMap =
+      {}; // <String> playerName, <int> longestStreak
+}
+
+enum GameEventType { firstHit, firstSunk }
+
+class GameEvent {
+  final GameEventType gameEventType;
+  final String playerName;
+  final int round;
+
+  const GameEvent({
+    required this.gameEventType,
+    required this.playerName,
+    required this.round,
+  });
+}
+
+class GameEventTracker {
+  late List<GameEvent> gameEvents;
+  late final UncoveredTiles
+  uncoveredTiles; // <int> number of undiscovered tiles
+  late final HitPercentage hitPercentage; // <double> % of accurate shots
+  bool isFirstHit = false;
+  bool isFirstSunk = false;
+
+  GameEventTracker();
+}
+
 class _GamePageState extends State<GamePage> {
   late GameManager gameManager;
+  late GameEventTracker gameEventTracker;
 
   void markPlayerNativeMapTilesOnNativeList(
     PlayerState currentNativePlayerState,
@@ -358,6 +424,8 @@ class _GamePageState extends State<GamePage> {
       gameSettings: widget.gameSettings,
     );
 
+    gameEventTracker = GameEventTracker();
+
     markPlayerNativeMapTilesOnNativeList(gameManager.currentPlayer);
 
     player1.totalHealth = calculateTotalHealth(player1);
@@ -371,64 +439,67 @@ class _GamePageState extends State<GamePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('turn: ${gameManager.currentTurn}'),
-        leading: Icon(gameManager.currentPlayer.player.avatar.icon),
-        actions: [
-          IconButton(
-            onPressed: () {
-              if (_exitRequested) {
-                exitGame();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MyHomePage(title: 'SHIPS'),
-                  ),
-                  (Route<dynamic> route) => false, // Remove all previous routes
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '          Press again to exit the game          ',
-                      style: TextStyle(color: Colors.red, fontSize: 24),
+        title: isWinner ? Text('') : Text('turn: ${gameManager.currentTurn}'),
+        automaticallyImplyLeading: false,
+        leading:
+            isWinner
+                ? null
+                : Icon(gameManager.currentPlayer.player.avatar.icon),
+        actions:
+            isWinner
+                ? []
+                : [
+                  IconButton(
+                    onPressed: () {
+                      if (_exitRequested) {
+                        exitGame();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MyHomePage(title: 'SHIPS'),
+                          ),
+                          (Route<dynamic> route) =>
+                              false, // Remove all previous routes
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '          Press again to exit the game          ',
+                              style: TextStyle(color: Colors.red, fontSize: 24),
+                            ),
+                            behavior:
+                                SnackBarBehavior
+                                    .floating, // Makes it float, not pinned
+                            margin: EdgeInsets.only(
+                              left: 10,
+                              right: 10,
+                              bottom: 680,
+                            ),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                        setState(() {
+                          _exitRequested = true;
+                          message = 'Do you want to end the game?';
+                        });
+                      }
+                    },
+                    icon: Icon(
+                      Icons.exit_to_app_rounded,
+                      color: _exitRequested ? Colors.black : Colors.black12,
                     ),
-                    behavior:
-                        SnackBarBehavior.floating, // Makes it float, not pinned
-                    margin: EdgeInsets.only(left: 10, right: 10, bottom: 680),
-                    duration: Duration(seconds: 4),
                   ),
-                );
-                setState(() {
-                  _exitRequested = true;
-                  message = 'Do you want to end the game?';
-                });
-              }
-            },
-            icon: Icon(
-              Icons.do_disturb,
-              color: _exitRequested ? Colors.black : Colors.black12,
-            ),
-          ),
-        ],
-        backgroundColor: gameManager.currentPlayer.player.avatar.background,
+                ],
+        backgroundColor:
+            isWinner
+                ? Colors.grey[200]!
+                : gameManager.currentPlayer.player.avatar.background,
       ),
       bottomNavigationBar: BottomAppBar(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // TextButton.icon(
-            //   onPressed: () {
-            //     _exitRequested = false;
-            //   },
-            //   icon: Icon(Icons.toggle_off),
-            //   label: Text('toggle map'),
-            //   style: TextButton.styleFrom(
-            //     shape: RoundedRectangleBorder(
-            //       borderRadius: BorderRadius.circular(5),
-            //       side: BorderSide(width: 2, color: Colors.grey[300]!),
-            //     ),
-            //   ),
-            // ),
             if (!isWinner)
               TextButton.icon(
                 onPressed: () {
@@ -460,18 +531,6 @@ class _GamePageState extends State<GamePage> {
                     color: !_allowAction ? Colors.green : Colors.grey[200]!,
                   ),
                 ),
-                //               style: ElevatedButton.styleFrom(
-                //   elevation: ready ? 3 : 0,
-                //   shape: RoundedRectangleBorder(
-                //     borderRadius: BorderRadius.circular(5),
-                //     side: BorderSide(
-                //       width: 2,
-                //       color: ready ? Colors.green[500]! : Colors.blueGrey[100]!,
-                //     ),
-                //   ),
-                //   backgroundColor:
-                //       ready ? Colors.green[300] : Colors.blueGrey[100],
-                // ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       !_allowAction ? Colors.green[200] : Colors.grey[200]!,
@@ -483,7 +542,6 @@ class _GamePageState extends State<GamePage> {
                       color: !_allowAction ? Colors.green : Colors.grey[200]!,
                     ),
                   ),
-                  // backgroundColor: Colors.grey[300]!,
                 ),
               ),
           ],
@@ -547,6 +605,7 @@ class _GamePageState extends State<GamePage> {
                                       shotEnemyTile(
                                         gameManager,
                                         targetEnemyTile,
+                                        gameEventTracker,
                                       );
                                     });
                                   },
@@ -807,93 +866,9 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
               if (isWinner)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        SizedBox(height: 70),
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color:
-                                gameManager
-                                    .currentPlayer
-                                    .player
-                                    .avatar
-                                    .background,
-                          ),
-                          child: Icon(
-                            gameManager.currentPlayer.player.avatar.icon,
-                            size: 50,
-                          ),
-                        ),
-                        SizedBox(height: 30),
-                        Text(
-                          "${gameManager.currentPlayer.player.playerName} wins!",
-                          style: TextStyle(
-                            fontSize: 60,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          gameManager
-                              .currentPlayer
-                              .player
-                              .fraction!
-                              .name
-                              .display,
-                          style: TextStyle(fontSize: 13),
-                        ),
-                        SizedBox(height: 40),
-                        Text(
-                          'thank you for playing',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontStyle: FontStyle.italic,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              exitGame();
-                              isWinner = false;
-                              message = '';
-                              _allowAction = true;
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => MyHomePage(title: 'SHIPS'),
-                                ),
-                                (Route<dynamic> route) =>
-                                    false, // Remove all previous routes
-                              );
-                            });
-                          },
-                          label: Text(
-                            'end game',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          icon: Icon(
-                            Icons.sentiment_very_satisfied,
-                            color: Colors.white,
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5),
-                              side: BorderSide(width: 2, color: Colors.red),
-                            ),
-                            backgroundColor: Colors.red[200]!,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                EndgameWidget(
+                  gameManager: gameManager,
+                  gameEventTracker: gameEventTracker,
                 ),
             ],
           ),
@@ -1061,5 +1036,260 @@ class _PlayerCardState extends State<PlayerCard> {
         ),
       ),
     );
+  }
+}
+
+class EndgameWidget extends StatefulWidget {
+  final GameManager gameManager;
+  final GameEventTracker gameEventTracker;
+
+  const EndgameWidget({
+    super.key,
+    required this.gameManager,
+    required this.gameEventTracker,
+  });
+
+  @override
+  State<EndgameWidget> createState() => _EndgameWidgetState();
+}
+
+class _EndgameWidgetState extends State<EndgameWidget> {
+  double? summaryColumnsSpacing = 100;
+  bool showStats = false;
+
+  final _confettiController = ConfettiController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    _confettiController.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController.play();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (showStats) {
+      return Positioned.fill(
+        child: Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              Text(
+                'Game Summary',
+                style: TextStyle(fontSize: 60, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Column(
+                    children: [
+                      Text(
+                        widget.gameManager.currentPlayer.player.playerName,
+                        style: TextStyle(fontSize: 30),
+                      ),
+                      Text(
+                        widget
+                            .gameManager
+                            .currentPlayer
+                            .player
+                            .fraction!
+                            .name
+                            .display,
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      SizedBox(
+                        height: 100,
+                        width: 100,
+                        child: GridView.builder(
+                          itemCount: mapside * mapside,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: mapside,
+                                crossAxisSpacing: 0,
+                                mainAxisSpacing: 0,
+                              ),
+                          itemBuilder: (context, index) {
+                            MapTile nativeTile =
+                                widget
+                                    .gameManager
+                                    .currentPlayer
+                                    .nativeTiles[index];
+                            return Container(
+                              alignment: Alignment.center,
+                              color: getTileColor(nativeTile.status),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: 20), //summary columns spacing
+                  Column(
+                    children: [
+                      Text(
+                        widget.gameManager.enemyPlayer.player.playerName,
+                        style: TextStyle(fontSize: 30),
+                      ),
+                      Text(
+                        widget
+                            .gameManager
+                            .enemyPlayer
+                            .player
+                            .fraction!
+                            .name
+                            .display,
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      SizedBox(
+                        height: 100,
+                        width: 100,
+                        child: GridView.builder(
+                          itemCount: mapside * mapside,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: mapside,
+                                crossAxisSpacing: 0,
+                                mainAxisSpacing: 0,
+                              ),
+                          itemBuilder: (context, index) {
+                            MapTile nativeTile =
+                                widget
+                                    .gameManager
+                                    .enemyPlayer
+                                    .nativeTiles[index];
+                            return Container(
+                              alignment: Alignment.center,
+                              color: getTileColor(nativeTile.status),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 30),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    exitGame();
+                    isWinner = false;
+                    message = '';
+                    _allowAction = true;
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MyHomePage(title: 'SHIPS'),
+                      ),
+                      (Route<dynamic> route) =>
+                          false, // Remove all previous routes
+                    );
+                  });
+                },
+                label: Text('end game', style: TextStyle(color: Colors.white)),
+                icon: Icon(Icons.sentiment_very_satisfied, color: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    side: BorderSide(width: 2, color: Colors.red),
+                  ),
+                  backgroundColor: Colors.red[200]!,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Positioned.fill(
+        child: Container(
+          color: Colors.white,
+          child: Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                // blastDirection: -(math.pi) / 2,
+                colors: [
+                  Colors.deepOrange[300]!,
+                  Colors.cyan[300]!,
+                  Colors.amber[500]!,
+                  Colors.teal[300]!,
+                  Colors.deepPurple[200]!,
+                ],
+                gravity: 0.03,
+                emissionFrequency: 0.4,
+                numberOfParticles: 10,
+              ),
+              Column(
+                children: [
+                  SizedBox(height: 30),
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          widget
+                              .gameManager
+                              .currentPlayer
+                              .player
+                              .avatar
+                              .background,
+                    ),
+                    child: Icon(
+                      widget.gameManager.currentPlayer.player.avatar.icon,
+                      size: 50,
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  Text(
+                    "${widget.gameManager.currentPlayer.player.playerName}\nwins!",
+                    style: TextStyle(fontSize: 60, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'thank you for playing',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _confettiController.stop();
+                        showStats = true;
+                      });
+                    },
+                    label: Text(
+                      'show game stats',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    icon: Icon(Icons.bar_chart_outlined, color: Colors.white),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                        side: BorderSide(width: 2, color: Colors.green),
+                      ),
+                      backgroundColor: Colors.green[200]!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 }

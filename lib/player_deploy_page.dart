@@ -773,7 +773,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
           actions: [
             IconButton(
               icon: Icon(
-                Icons.do_disturb,
+                Icons.exit_to_app_rounded,
                 color: _exitRequested ? Colors.black : Colors.black12,
                 size: 35,
               ),
@@ -1254,7 +1254,7 @@ class _DeploymentListOrContinueButton
                                 onPressed: () {
                                   exitGame();
                                 },
-                                icon: Icon(Icons.do_disturb),
+                                icon: Icon(Icons.exit_to_app_rounded),
                               ),
                               Text('try again'),
                             ],
