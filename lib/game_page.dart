@@ -127,9 +127,12 @@ Ship? identifyEnemyShipByTile(PlayerState enemyPlayer, MapTile checkTile) {
   return null;
 }
 
-void checkIsWinner(GameManager gameManager) {
+void checkIsWinner(GameManager gameManager, GameStatsManager gameStatsManager) {
   if (gameManager.enemyPlayer.player.currentHealth == 0) {
     isWinner = true;
+    gameStatsManager.getUncoveredTilesStats(gameManager);
+    gameStatsManager.getHitPercentageStat(gameManager);
+    gameStatsManager.getMissedShotsStat(gameManager);
   }
 }
 
@@ -200,7 +203,7 @@ void markEnemyStrikesOnNativeMap(
 void shotEnemyTile(
   GameManager gameManager,
   MapTile targetTile,
-  GameEventTracker gameEventTracker,
+  GameStatsManager gameStatsManager,
 ) {
   bool isHit = false;
   _exitRequested = false;
@@ -217,15 +220,16 @@ void shotEnemyTile(
               gameManager.enemyPlayer.player.currentHealth--;
               targetTile.isExplored = true;
               isHit = true;
-              if (!gameEventTracker.isFirstHit) {
-                gameEventTracker.gameEvents.add(
-                  GameEvent(
-                    gameEventType: GameEventType.firstHit,
+              gameManager.currentPlayer.player.successfulShots++;
+              if (!gameStatsManager.isFirstHit) {
+                gameStatsManager.gameStats.add(
+                  GameStat(
+                    gameStatType: GameStatType.firstHit,
                     playerName: gameManager.currentPlayer.player.playerName,
-                    round: gameManager.currentTurn,
+                    value: gameManager.currentTurn,
                   ),
                 );
-                gameEventTracker.isFirstHit = true;
+                gameStatsManager.isFirstHit = true;
               }
               message = 'Hit enemy ship at ${targetTile.alfaAdress} !';
               // directly display that the ship was already destroyed, uncover neighbouring tiles to clear up the map
@@ -236,15 +240,15 @@ void shotEnemyTile(
               if (clickedShip!.health == 0) {
                 message = "Enemy ship '${clickedShip.shipName}' was sunk!";
                 uncoverNeighbourTiles(gameManager, clickedShip);
-                if (!gameEventTracker.isFirstSunk) {
-                  gameEventTracker.gameEvents.add(
-                    GameEvent(
-                      gameEventType: GameEventType.firstSunk,
+                if (!gameStatsManager.isFirstSunk) {
+                  gameStatsManager.gameStats.add(
+                    GameStat(
+                      gameStatType: GameStatType.firstSunk,
                       playerName: gameManager.currentPlayer.player.playerName,
-                      round: gameManager.currentTurn,
+                      value: gameManager.currentTurn,
                     ),
                   );
-                  gameEventTracker.isFirstSunk = true;
+                  gameStatsManager.isFirstSunk = true;
                 }
               }
 
@@ -258,6 +262,7 @@ void shotEnemyTile(
             break;
           }
           message = 'Miss...';
+          gameManager.currentPlayer.player.shotsFired++;
         }
         markEnemyStrikesOnNativeMap(gameManager, targetTile, isHit);
         // preview of targets selected by enemy on player's native map. if hit status marked as Destroyed (dark red), else marked as target (bright red)
@@ -286,7 +291,7 @@ void shotEnemyTile(
       }
     }
   }
-  checkIsWinner(gameManager);
+  checkIsWinner(gameManager, gameStatsManager);
 }
 
 class PlayerState {
@@ -344,34 +349,154 @@ class LongestHitStreak {
       {}; // <String> playerName, <int> longestStreak
 }
 
-enum GameEventType { firstHit, firstSunk }
+enum GameStatType {
+  firstHit, // <int> round
+  firstSunk, // <int> round
+  missedShots, // <int>
+  longestHitStreak, // <int>
+  uncoveredTiles, // <int> number of undiscovered tiles
+  hitPercentage, // <int> % of accurate shots
+}
 
-class GameEvent {
-  final GameEventType gameEventType;
+class GameStat {
+  final GameStatType gameStatType;
   final String playerName;
-  final int round;
+  final int value;
 
-  const GameEvent({
-    required this.gameEventType,
+  const GameStat({
+    required this.gameStatType,
     required this.playerName,
-    required this.round,
+    required this.value,
   });
 }
 
-class GameEventTracker {
-  late List<GameEvent> gameEvents;
-  late final UncoveredTiles
-  uncoveredTiles; // <int> number of undiscovered tiles
-  late final HitPercentage hitPercentage; // <double> % of accurate shots
+class GameStatsManager {
+  List<GameStat> gameStats = [];
   bool isFirstHit = false;
   bool isFirstSunk = false;
 
-  GameEventTracker();
+  Map<GameStatType, int> statWeights = {};
+
+  GameStatsManager();
+
+  void getUncoveredTilesStats(GameManager gameManager) {
+    int uncoveredTilesCounter = 0;
+    for (MapTile tile in gameManager.currentPlayer.enemyTiles) {
+      if (!tile.isExplored) {
+        uncoveredTilesCounter++;
+      }
+    }
+    gameStats.add(
+      GameStat(
+        gameStatType: GameStatType.uncoveredTiles,
+        playerName: gameManager.currentPlayer.player.playerName,
+        value: uncoveredTilesCounter,
+      ),
+    );
+    uncoveredTilesCounter = 0;
+    for (MapTile tile in gameManager.enemyPlayer.enemyTiles) {
+      if (!tile.isExplored) {
+        uncoveredTilesCounter++;
+      }
+    }
+    gameStats.add(
+      GameStat(
+        gameStatType: GameStatType.uncoveredTiles,
+        playerName: gameManager.enemyPlayer.player.playerName,
+        value: uncoveredTilesCounter,
+      ),
+    );
+  }
+
+  void getHitPercentageStat(GameManager gameManager) {
+    int accuracy =
+        gameManager.currentPlayer.player.shotsFired == 0
+            ? 0
+            : ((gameManager.currentPlayer.player.successfulShots /
+                        gameManager.currentPlayer.player.shotsFired) *
+                    100)
+                .round();
+    gameStats.add(
+      GameStat(
+        gameStatType: GameStatType.hitPercentage,
+        playerName: gameManager.currentPlayer.player.playerName,
+        value: accuracy,
+      ),
+    );
+
+    ///
+    accuracy =
+        gameManager.enemyPlayer.player.shotsFired == 0
+            ? 0
+            : ((gameManager.enemyPlayer.player.successfulShots /
+                        gameManager.enemyPlayer.player.shotsFired) *
+                    100)
+                .round();
+    gameStats.add(
+      GameStat(
+        gameStatType: GameStatType.hitPercentage,
+        playerName: gameManager.enemyPlayer.player.playerName,
+        value: accuracy,
+      ),
+    );
+  }
+
+  void getMissedShotsStat(GameManager gameManager) {
+    gameStats.add(
+      GameStat(
+        gameStatType: GameStatType.missedShots,
+        playerName: gameManager.currentPlayer.player.playerName,
+        value:
+            gameManager.currentPlayer.player.shotsFired -
+            gameManager.currentPlayer.player.successfulShots,
+      ),
+    );
+
+    gameStats.add(
+      GameStat(
+        gameStatType: GameStatType.missedShots,
+        playerName: gameManager.enemyPlayer.player.playerName,
+        value:
+            gameManager.enemyPlayer.player.shotsFired -
+            gameManager.enemyPlayer.player.successfulShots,
+      ),
+    );
+  }
+
+  GameStat getPlayerStat(String playerName) {
+    List<GameStat> statsForSelectedPlayer = [];
+    for (int i = 0; i < gameStats.length; i++) {
+      if (gameStats[i].playerName == playerName) {
+        statsForSelectedPlayer.add(gameStats[i]);
+      }
+    }
+    return getRandomItem(statsForSelectedPlayer);
+  }
+
+  String describeStat(GameStat stat) {
+    switch (stat.gameStatType) {
+      case GameStatType.firstHit:
+        return 'First hit in round ${stat.value}';
+      case GameStatType.firstSunk:
+        return 'First sunk in round ${stat.value}';
+      case GameStatType.uncoveredTiles:
+        return 'uncovered tiles: ${stat.value}';
+      case GameStatType.hitPercentage:
+        return '${stat.value}% shot accuracy';
+      case GameStatType.missedShots:
+        return '${stat.value} missed shots';
+      // case GameStatType.longestHitStreak:
+      //   return '';
+
+      default:
+        return 'GG';
+    }
+  }
 }
 
 class _GamePageState extends State<GamePage> {
   late GameManager gameManager;
-  late GameEventTracker gameEventTracker;
+  late GameStatsManager gameStatsManager;
 
   void markPlayerNativeMapTilesOnNativeList(
     PlayerState currentNativePlayerState,
@@ -424,7 +549,7 @@ class _GamePageState extends State<GamePage> {
       gameSettings: widget.gameSettings,
     );
 
-    gameEventTracker = GameEventTracker();
+    gameStatsManager = GameStatsManager();
 
     markPlayerNativeMapTilesOnNativeList(gameManager.currentPlayer);
 
@@ -605,7 +730,7 @@ class _GamePageState extends State<GamePage> {
                                       shotEnemyTile(
                                         gameManager,
                                         targetEnemyTile,
-                                        gameEventTracker,
+                                        gameStatsManager,
                                       );
                                     });
                                   },
@@ -868,7 +993,7 @@ class _GamePageState extends State<GamePage> {
               if (isWinner)
                 EndgameWidget(
                   gameManager: gameManager,
-                  gameEventTracker: gameEventTracker,
+                  gameStatsManager: gameStatsManager,
                 ),
             ],
           ),
@@ -1041,12 +1166,12 @@ class _PlayerCardState extends State<PlayerCard> {
 
 class EndgameWidget extends StatefulWidget {
   final GameManager gameManager;
-  final GameEventTracker gameEventTracker;
+  final GameStatsManager gameStatsManager;
 
   const EndgameWidget({
     super.key,
     required this.gameManager,
-    required this.gameEventTracker,
+    required this.gameStatsManager,
   });
 
   @override
@@ -1055,6 +1180,9 @@ class EndgameWidget extends StatefulWidget {
 
 class _EndgameWidgetState extends State<EndgameWidget> {
   double? summaryColumnsSpacing = 100;
+  double? summaryMapSize = 150;
+  double? statsfontsize = 15;
+
   bool showStats = false;
 
   final _confettiController = ConfettiController();
@@ -1103,9 +1231,10 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                             .display,
                         style: TextStyle(fontSize: 13),
                       ),
+                      SizedBox(height: 15),
                       SizedBox(
-                        height: 100,
-                        width: 100,
+                        height: summaryMapSize,
+                        width: summaryMapSize,
                         child: GridView.builder(
                           itemCount: mapside * mapside,
                           gridDelegate:
@@ -1127,6 +1256,43 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                           },
                         ),
                       ),
+                      SizedBox(height: 30),
+                      SizedBox(
+                        height: summaryMapSize,
+                        width: summaryMapSize,
+                        child: GridView.builder(
+                          itemCount: mapside * mapside,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: mapside,
+                                crossAxisSpacing: 0,
+                                mainAxisSpacing: 0,
+                              ),
+                          itemBuilder: (context, index) {
+                            MapTile nativeTile =
+                                widget
+                                    .gameManager
+                                    .currentPlayer
+                                    .enemyTiles[index];
+                            return Container(
+                              alignment: Alignment.center,
+                              color: getTileColor(nativeTile.status),
+                            );
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 30),
+                      Text(
+                        widget.gameStatsManager.describeStat(
+                          widget.gameStatsManager.getPlayerStat(
+                            widget.gameManager.currentPlayer.player.playerName,
+                          ),
+                        ),
+                        style: TextStyle(
+                          fontSize: statsfontsize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(width: 20), //summary columns spacing
@@ -1146,9 +1312,35 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                             .display,
                         style: TextStyle(fontSize: 13),
                       ),
+                      SizedBox(height: 15),
                       SizedBox(
-                        height: 100,
-                        width: 100,
+                        height: summaryMapSize,
+                        width: summaryMapSize,
+                        child: GridView.builder(
+                          itemCount: mapside * mapside,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: mapside,
+                                crossAxisSpacing: 0,
+                                mainAxisSpacing: 0,
+                              ),
+                          itemBuilder: (context, index) {
+                            MapTile nativeTile =
+                                widget
+                                    .gameManager
+                                    .enemyPlayer
+                                    .enemyTiles[index];
+                            return Container(
+                              alignment: Alignment.center,
+                              color: getTileColor(nativeTile.status),
+                            );
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 30),
+                      SizedBox(
+                        height: summaryMapSize,
+                        width: summaryMapSize,
                         child: GridView.builder(
                           itemCount: mapside * mapside,
                           gridDelegate:
@@ -1170,11 +1362,23 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                           },
                         ),
                       ),
+                      SizedBox(height: 30),
+                      Text(
+                        widget.gameStatsManager.describeStat(
+                          widget.gameStatsManager.getPlayerStat(
+                            widget.gameManager.enemyPlayer.player.playerName,
+                          ),
+                        ),
+                        style: TextStyle(
+                          fontSize: statsfontsize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
-              SizedBox(height: 30),
+              SizedBox(height: 50),
               ElevatedButton.icon(
                 onPressed: () {
                   setState(() {

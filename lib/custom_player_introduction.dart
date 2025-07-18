@@ -261,6 +261,8 @@ class Player {
   late int currentHealth;
   bool isComputer;
   bool hideNativeMap = false;
+  int shotsFired = 0;
+  int successfulShots = 0;
 
   Player({
     required this.playerName,
