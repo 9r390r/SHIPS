@@ -417,7 +417,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
                         builder: (context) {
                           if (myCustomGameSettings.gameMode ==
                               GameMode.computer) {
-                            Fraction chosenRandomFraction = randomFraction();
+                            Faction chosenRandomfaction = randomfaction();
                             int computerID = generatePlayerID();
                             Player computerPlayer = Player(
                               playerName: generateComputerName(),
@@ -425,10 +425,10 @@ class _GameSetupPageState extends State<GameSetupPage> {
                                 Icons.smart_toy_outlined,
                                 getComputerAvatarRandomColor(),
                               ),
-                              fraction: chosenRandomFraction,
+                              faction: chosenRandomfaction,
                               shipTypes: calculateShipTypesLineupForPLayer(
                                 mapsize: myCustomGameSettings.mapsize,
-                                fraction: chosenRandomFraction,
+                                faction: chosenRandomfaction,
                                 playerID: computerID,
                               ),
                               ships: [],
@@ -457,7 +457,7 @@ class _GameSetupPageState extends State<GameSetupPage> {
                                 Icons.question_mark_rounded,
                                 Colors.grey,
                               ),
-                              fraction: null,
+                              faction: null,
                               shipTypes: [],
                               ships: [],
                               playerID: generatePlayerID(),

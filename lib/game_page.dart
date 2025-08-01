@@ -46,7 +46,7 @@ void exitGame() {
 
   for (Player player in myCustomGameSettings.players) {
     player.avatar = Avatar(Icons.question_mark_rounded, Colors.grey);
-    player.fraction = null;
+    player.faction = null;
     player.playerName = '';
     player.shipTypes.clear();
     player.ships.clear();
@@ -690,7 +690,7 @@ class _GamePageState extends State<GamePage> {
                   //       Icon(gameManager.currentPlayer.player.avatar.icon),
                   //       SizedBox(width: 10),
                   //       Text(
-                  //         '${gameManager.currentPlayer.player.name}  (${gameManager.currentPlayer.player.fraction})',
+                  //         '${gameManager.currentPlayer.player.name}  (${gameManager.currentPlayer.player.faction})',
                   //         style: TextStyle(fontSize: 20),
                   //       ),
                   //     ],
@@ -952,7 +952,7 @@ class _GamePageState extends State<GamePage> {
                   //   height: 10,
                   //   width: 10,
                   // ),
-                  // Text(player1.fraction?.toString() ?? "null"),
+                  // Text(player1.faction?.toString() ?? "null"),
                   // Text('Ship Types: ${player1.shipTypes.join(", ")}'),
                   // Text('Ships count: ${player1.ships.length}'),
                   // Text('Player ID: ${player1.playerID}'),
@@ -971,7 +971,7 @@ class _GamePageState extends State<GamePage> {
                   //   height: 10,
                   //   width: 10,
                   // ),
-                  // Text(player2.fraction?.toString() ?? "null"),
+                  // Text(player2.faction?.toString() ?? "null"),
                   // Text('Ship Types: ${player2.shipTypes.join(", ")}'),
                   // Text('Ships count: ${player2.ships.length}'),
                   // Text('Player ID: ${player2.playerID}'),
@@ -1076,7 +1076,7 @@ List<String> federationQuotes = [
   'Would you like to round up this strike for charity?',
 ];
 
-String getQuote(String fraction) {
+String getQuote(String faction) {
   String quote = 'It is your turn!';
   final random = math.Random();
   int initial = random.nextInt(10);
@@ -1086,13 +1086,13 @@ String getQuote(String fraction) {
     int randomNeutralQuoteIndex = random.nextInt(neutralQuotes.length);
     return neutralQuotes[randomNeutralQuoteIndex];
   } else {
-    if (fraction == 'Navy') {
+    if (faction == 'Navy') {
       int randomNavyQuoteIndex = random.nextInt(navyQuotes.length);
       return navyQuotes[randomNavyQuoteIndex];
-    } else if (fraction == 'Pirates') {
+    } else if (faction == 'Pirates') {
       int randomPiratesQuoteIndex = random.nextInt(piratesQuotes.length);
       return piratesQuotes[randomPiratesQuoteIndex];
-    } else if (fraction == 'Federation') {
+    } else if (faction == 'Federation') {
       int randomFederationQuoteIndex = random.nextInt(federationQuotes.length);
       return federationQuotes[randomFederationQuoteIndex];
     }
@@ -1103,8 +1103,8 @@ String getQuote(String fraction) {
 class _PlayerCardState extends State<PlayerCard> {
   @override
   Widget build(BuildContext context) {
-    String currentFraction =
-        widget.currentPlayerState.player.fraction!.name.display;
+    String currentfaction =
+        widget.currentPlayerState.player.faction!.name.display;
     String currentPlayerName = widget.currentPlayerState.player.playerName;
     Color currentColor = widget.currentPlayerState.player.avatar.background;
     IconData currentIcon = widget.currentPlayerState.player.avatar.icon;
@@ -1131,10 +1131,10 @@ class _PlayerCardState extends State<PlayerCard> {
                 currentPlayerName,
                 style: TextStyle(fontSize: 60, fontWeight: FontWeight.bold),
               ),
-              Text(currentFraction, style: TextStyle(fontSize: 13)),
+              Text(currentfaction, style: TextStyle(fontSize: 13)),
               SizedBox(height: 40),
               Text(
-                getQuote(currentFraction),
+                getQuote(currentfaction),
                 style: TextStyle(
                   fontSize: 16,
                   fontStyle: FontStyle.italic,
@@ -1226,7 +1226,7 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                             .gameManager
                             .currentPlayer
                             .player
-                            .fraction!
+                            .faction!
                             .name
                             .display,
                         style: TextStyle(fontSize: 13),
@@ -1257,30 +1257,30 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                         ),
                       ),
                       SizedBox(height: 30),
-                      SizedBox(
-                        height: summaryMapSize,
-                        width: summaryMapSize,
-                        child: GridView.builder(
-                          itemCount: mapside * mapside,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: mapside,
-                                crossAxisSpacing: 0,
-                                mainAxisSpacing: 0,
-                              ),
-                          itemBuilder: (context, index) {
-                            MapTile nativeTile =
-                                widget
-                                    .gameManager
-                                    .currentPlayer
-                                    .enemyTiles[index];
-                            return Container(
-                              alignment: Alignment.center,
-                              color: getTileColor(nativeTile.status),
-                            );
-                          },
-                        ),
-                      ),
+                      // SizedBox(
+                      //   height: summaryMapSize,
+                      //   width: summaryMapSize,
+                      //   child: GridView.builder(
+                      //     itemCount: mapside * mapside,
+                      //     gridDelegate:
+                      //         SliverGridDelegateWithFixedCrossAxisCount(
+                      //           crossAxisCount: mapside,
+                      //           crossAxisSpacing: 0,
+                      //           mainAxisSpacing: 0,
+                      //         ),
+                      //     itemBuilder: (context, index) {
+                      //       MapTile nativeTile =
+                      //           widget
+                      //               .gameManager
+                      //               .currentPlayer
+                      //               .enemyTiles[index];
+                      //       return Container(
+                      //         alignment: Alignment.center,
+                      //         color: getTileColor(nativeTile.status),
+                      //       );
+                      //     },
+                      //   ),
+                      // ),
                       SizedBox(height: 30),
                       Text(
                         widget.gameStatsManager.describeStat(
@@ -1307,37 +1307,12 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                             .gameManager
                             .enemyPlayer
                             .player
-                            .fraction!
+                            .faction!
                             .name
                             .display,
                         style: TextStyle(fontSize: 13),
                       ),
                       SizedBox(height: 15),
-                      SizedBox(
-                        height: summaryMapSize,
-                        width: summaryMapSize,
-                        child: GridView.builder(
-                          itemCount: mapside * mapside,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: mapside,
-                                crossAxisSpacing: 0,
-                                mainAxisSpacing: 0,
-                              ),
-                          itemBuilder: (context, index) {
-                            MapTile nativeTile =
-                                widget
-                                    .gameManager
-                                    .enemyPlayer
-                                    .enemyTiles[index];
-                            return Container(
-                              alignment: Alignment.center,
-                              color: getTileColor(nativeTile.status),
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(height: 30),
                       SizedBox(
                         height: summaryMapSize,
                         width: summaryMapSize,
@@ -1362,6 +1337,31 @@ class _EndgameWidgetState extends State<EndgameWidget> {
                           },
                         ),
                       ),
+                      SizedBox(height: 30),
+                      // SizedBox(
+                      //   height: summaryMapSize,
+                      //   width: summaryMapSize,
+                      //   child: GridView.builder(
+                      //     itemCount: mapside * mapside,
+                      //     gridDelegate:
+                      //         SliverGridDelegateWithFixedCrossAxisCount(
+                      //           crossAxisCount: mapside,
+                      //           crossAxisSpacing: 0,
+                      //           mainAxisSpacing: 0,
+                      //         ),
+                      //     itemBuilder: (context, index) {
+                      //       MapTile nativeTile =
+                      //           widget
+                      //               .gameManager
+                      //               .enemyPlayer
+                      //               .enemyTiles[index];
+                      //       return Container(
+                      //         alignment: Alignment.center,
+                      //         color: getTileColor(nativeTile.status),
+                      //       );
+                      //     },
+                      //   ),
+                      // ),
                       SizedBox(height: 30),
                       Text(
                         widget.gameStatsManager.describeStat(

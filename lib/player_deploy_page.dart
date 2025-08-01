@@ -110,7 +110,7 @@ int thisShipPlacedTiles = 0; // logic operator
 List<int> shipsToDeploySimplified =
     []; // simplified ships (tile-counts) for deploying logic purposes
 late int mapside;
-List<ShipTypeForPlayerAndFraction> currentPlayershipTypesToDeploy =
+List<ShipTypeForPlayerAndfaction> currentPlayershipTypesToDeploy =
     []; // types of ships of currentPlayer
 List<Ship> currentPlayerShipsOriginal = []; // original list no modifications
 
@@ -609,7 +609,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
       }
       widget.currentPlayer.shipTypes = calculateShipTypesLineupForPLayer(
         mapsize: widget.preGameManager.difficultyGameModeAndMapSettings.mapsize,
-        fraction: widget.currentPlayer.fraction!,
+        faction: widget.currentPlayer.faction!,
         playerID: widget.currentPlayer.playerID,
       );
       widget.currentPlayer.ships = expandToIndividualShips(
@@ -656,7 +656,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
 
     for (Player player in myCustomGameSettings.players) {
       player.avatar = Avatar(Icons.question_mark_rounded, Colors.grey);
-      player.fraction = null;
+      player.faction = null;
       player.playerName = '';
       player.shipTypes.clear();
       player.ships.clear();
@@ -761,7 +761,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
           title: Text(
             coverComputerDeploy
                 ? ''
-                : 'Deploy Your ${widget.currentPlayer.fraction!.name.display}',
+                : 'Deploy Your ${widget.currentPlayer.faction!.name.display}',
             style: TextStyle(color: Colors.black, fontSize: 24),
           ),
           backgroundColor: playerColor,
@@ -972,11 +972,11 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
                             ),
                           ),
                           // Text(
-                          //   widget.currentPlayer.fraction!.name.display,
+                          //   widget.currentPlayer.faction!.name.display,
                           //   style: TextStyle(fontSize: 13),
                           // ),
-                          // fraction is not revealed in order not to give second player any advantage.
-                          // could be shown if enemy fraction is selected, otherwise 'random'
+                          // faction is not revealed in order not to give second player any advantage.
+                          // could be shown if enemy faction is selected, otherwise 'random'
                           SizedBox(height: 40),
                           SizedBox(height: 10),
                           ElevatedButton.icon(
@@ -989,7 +989,7 @@ class _PlayerDeployPage extends State<PlayerDeployPage> {
                                   Icons.question_mark_rounded,
                                   Colors.grey,
                                 ),
-                                fraction: null,
+                                faction: null,
                                 shipTypes: [],
                                 ships: [],
                                 playerID: generatePlayerID(),
@@ -1155,7 +1155,7 @@ class _DeploymentListOrContinueButton
                           Icons.question_mark_rounded,
                           Colors.grey,
                         ),
-                        fraction: null,
+                        faction: null,
                         shipTypes: [],
                         ships: [],
                         playerID: generatePlayerID(),
@@ -1183,7 +1183,7 @@ class _DeploymentListOrContinueButton
                           Icons.question_mark_rounded,
                           Colors.grey,
                         ),
-                        fraction: null,
+                        faction: null,
                         shipTypes: [],
                         ships: [],
                         playerID: generatePlayerID(),
@@ -1219,7 +1219,7 @@ class _DeploymentListOrContinueButton
                           Icons.question_mark_rounded,
                           Colors.grey,
                         ),
-                        fraction: null,
+                        faction: null,
                         shipTypes: [],
                         ships: [],
                         playerID: generatePlayerID(),
